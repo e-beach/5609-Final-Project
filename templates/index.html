@@ -1,0 +1,134 @@
+<html>
+    <head> <title>CSCI 5609 Final Project</title>
+
+        <!-- bootstrap -->
+        <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
+        <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+        <!-- d3 -->
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="jumbotron">
+                <h1>
+                    Stack Overflow Tag Visualization
+                </h1>
+                You can visualize StackOverflow tags using this nifty tool.
+            </div>
+        </div>
+    {{data}}
+    </body>
+<script>
+
+// add a d3 graph to the body of the webpage.
+// The graph should show tags vs time for any tag I choose.
+// It should also show results for groups of tags.
+
+const margin = {
+  top: 100,
+  right: 50,
+  bottom: 50,
+  left: 150
+};
+const width = 850 - margin.left - margin.right;
+const height = 350 - margin.top - margin.bottom;
+
+function drawBarGraph(){
+     // set the dimension for the graph
+  addLayer();
+  const Y_COL = 1;
+
+  const xScale = d3.scale.linear()
+    .range([0, width])
+    .domain([
+      d3.min(data, d => d[0]),
+      d3.max(data, d => d[0])
+    ]);
+
+  const yScale = d3.scale.linear()
+    .range([height, 0])
+    .domain([0, d3.max(data,d => d[Y_COL])]);
+
+  // for each datum, define a bar and add it to the SVG element 
+  chart.selectAll(".bar")
+  .data(data)
+  .enter()
+  .append("rect")
+      .attr("x", d => xScale(d[0]) + 0.5)
+      .attr("y", d => yScale(d[Y_COL]))
+      .attr("width", width / data.length - 0.5 * 2)
+      .attr("height", d => height - yScale(d[Y_COL]))
+      .attr("fill", "blue")
+      .attr("data-legend", () => "Population")
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide)
+      .classed("bar", true);
+
+  // create xAxis and yAxis functions
+  const xAxis = d3.svg.axis()
+    .scale(xScale)
+    .orient("bottom")
+    .ticks(5)
+    .tickFormat(d3.format("0000"))
+
+  const yAxis = d3.svg.axis()
+    .scale(yScale)
+    .orient("left")
+    .ticks(5)
+
+  // add the X Axis 
+  chart.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis)
+    .append("text")
+      .attr("y", margin.bottom / 2)
+      .attr("x", width / 2)
+      .attr("dy", ".71em")
+      .style("text-anchor", "middle")
+      .text("Year");
+
+
+  // add the Y Axis
+  chart.append("g")
+    .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("x", - height/2)
+      .attr("y", - margin.left * .97)
+      .attr("dy", ".71em")
+      .style("text-anchor", "middle")
+      .text("Population");
+
+}
+
+function drawGraph(data){
+    console.log('got the data', data);
+
+    const chart = d3.select("body")
+        .append("div")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+
+    // Add another graphic onto same svg. must be called after createChart()
+    function addLayer(){
+      chart.append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      return chart;
+    }
+
+    addLayer().append("text")
+        .attr("x", (width / 2))
+        .attr("y", (margin.top / 2))
+        .attr("text-anchor", "middle")
+        .style("font-size", "20px")
+        .text("JavaScript queries over time.");
+
+    drawBarGraph();
+}
+
+$.getJSON('data', drawGraph);  
+</script>
+</html>
