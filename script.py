@@ -72,6 +72,15 @@ def science():
         ''')
 
 @main.command()
+def myquery():
+    print('querying...')
+    for row in c.execute('''
+        select tags from POSTS where tags like "%java%"
+    '''):
+        print(row)
+
+
+@main.command()
 def showdb():
     for row in c.execute('''select * from POSTS order by cdate'''):
         print(row)
