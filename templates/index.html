@@ -18,7 +18,6 @@
                 You can visualize StackOverflow tags using this nifty tool.
             </div>
         </div>
-    {{data}}
     </body>
 <script>
 
@@ -35,7 +34,7 @@ const MARGIN = {
 const width = 850 - MARGIN.left - MARGIN.right;
 const height = 350 - MARGIN.top - MARGIN.bottom;
 
-const chart = d3.select("body")
+let chart = d3.select("body")
       .append("div")
       .append("svg")
       .attr("width", width + MARGIN.left + MARGIN.right)
@@ -43,8 +42,8 @@ const chart = d3.select("body")
 
 // Add another graphic onto same svg. must be called after createChart()
 function addLayer(){
-  chart.append("g")
-  .attr("transform", `translate(${MARGIN.left},${MARGIN.top}`);
+  chart = chart.append("g")
+  .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
   return chart;
 }
 
@@ -53,21 +52,21 @@ function drawBarGraph(data){
   addLayer();
   const Y_COL = 1;
 
-  const xScale = d3.scaleLinear()
-    .range([MARGIN.left, width - MARGIN.right])
+  const xScale = d3.scaleTime()
+    .range([0, width])
     .domain([
       d3.min(data, d => d[0]),
       d3.max(data, d => d[0])
     ]);
 
   const yScale = d3.scaleLinear()
-    .range([height - MARGIN.top, MARGIN.bottom])
+    .range([height, 0])
     .domain([0, d3.max(data,d => d[Y_COL])]);
 
   const xAxis = d3.axisBottom().scale(xScale);
   const yAxis = d3.axisLeft().scale(yScale);
 
-  // for each datum, define a bar and add it to the SVG element 
+  // for each datum, define a bar and add it to the SVG element
   chart.selectAll(".bar")
   .data(data)
   .enter()
@@ -80,7 +79,7 @@ function drawBarGraph(data){
       .attr("data-legend", () => "Population")
       .classed("bar", true);
 
-  // add the X Axis 
+  // add the X Axis
   chart.append("g")
     .attr("transform", "translate(0," + height + ")")
     .call(xAxis)
@@ -109,11 +108,15 @@ function drawGraph(data){
         .attr("y", (MARGIN.top / 2))
         .attr("text-anchor", "middle")
         .style("font-size", "20px")
-        .text("JavaScript queries over time.");
-
+        .text("JavaScript Queries over Time");
     drawBarGraph(data);
 }
 
-$.getJSON('data', drawGraph);  
+$.getJSON('data', (data) => {
+    console.log(data);
+    // convert strings to dates
+    const data_with_dates = data.results.map( (d) => [  new Date(d[0]), d[1] ] )
+    drawGraph(data_with_dates);
+});
 </script>
 </html>
