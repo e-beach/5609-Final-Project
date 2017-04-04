@@ -12,13 +12,23 @@
 
 import sqlite3
 import click
+from flask import Flask, jsonify, render_template
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/data')
+def data():
+    data = [list(row) for row in science()]
+    print(data)
+    return jsonify(results=data)
 
 conn = sqlite3.connect('stack_overflow.db')
 c = conn.cursor()
 
-@click.group()
-def main():
-    pass
 
 
 def create_db():
@@ -28,6 +38,7 @@ def create_db():
         # table did not exist
         pass
     c.execute('create table POSTS (tags Text, cdate date)')
+
 
 
 def insert_xml(data):
@@ -49,27 +60,26 @@ def soup(f, count):
         except KeyError:
             pass
 
+
+def science():
+    return c.execute('''
+            select ddate, count(*)
+                from (select tags, date(cdate) as ddate from POSTS)
+                where tags like "%java%"
+            group by ddate
+        ''')
+
+
+@click.group()
+def main():
+    pass
+
 @main.command()
 @click.argument('xml_file')
 @click.argument('count', type=int)
 def recreate(xml_file, count):
     create_db()
     insert_xml(soup(xml_file, count))
-
-def executed_commands():
-    """the commands I have executed to create or modify data in the database"""
-    return
-    create_db()
-    insert_xml()
-
-
-def science():
-    return c.execute('''
-            select count(*), ddate
-                from (select tags, date(cdate) as ddate from POSTS)
-                where tags like "java"
-            group by ddate
-        ''')
 
 @main.command()
 def myquery():
@@ -85,19 +95,6 @@ def showdb():
     for row in c.execute('''select * from POSTS order by cdate'''):
         print(row)
 
-from flask import Flask, jsonify, render_template
-
-app = Flask(__name__)
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/data')
-def data():
-    data = [list(row) for row in science()]
-    print(data)
-    return jsonify(results=data)
 
 @main.command()
 def server():

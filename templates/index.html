@@ -28,13 +28,13 @@
 const MARGIN = {
   top: 100,
   right: 50,
-  bottom: 50,
+  bottom: 60,
   left: 150
 };
 const width = 850 - MARGIN.left - MARGIN.right;
 const height = 350 - MARGIN.top - MARGIN.bottom;
 
-let chart = d3.select("body")
+const chart = d3.select("body")
       .append("div")
       .append("svg")
       .attr("width", width + MARGIN.left + MARGIN.right)
@@ -42,70 +42,38 @@ let chart = d3.select("body")
 
 // Add another graphic onto same svg. must be called after createChart()
 function addLayer(){
-  chart = chart.append("g")
-  .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
-  return chart;
+  const layer =  chart.append("g")
+    .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
+  return layer;
 }
 
 function drawBarGraph(data){
-  // set the dimension for the graph
-  addLayer();
-  const Y_COL = 1;
+    const xScale = d3.scaleTime()
+        .domain(
+            [d3.min(data, d=>d[0]),
+             d3.max(data, d=>d[0])])
+        .range([0, width])
+    const yScale = d3.scaleLinear()
+        .domain(
+            [ d3.min(data, d=>d[1]),
+              d3.max(data, d=>d[1]) ])
+        .range([0,height])
 
-  const xScale = d3.scaleTime()
-    .range([0, width])
-    .domain([
-      d3.min(data, d => d[0]),
-      d3.max(data, d => d[0])
-    ]);
-
-  const yScale = d3.scaleLinear()
-    .range([height, 0])
-    .domain([0, d3.max(data,d => d[Y_COL])]);
-
-  const xAxis = d3.axisBottom().scale(xScale);
-  const yAxis = d3.axisLeft().scale(yScale);
-
-  // for each datum, define a bar and add it to the SVG element
-  chart.selectAll(".bar")
-  .data(data)
-  .enter()
-  .append("rect")
-      .attr("x", d => xScale(d[0]) + 0.5)
-      .attr("y", d => yScale(d[Y_COL]))
-      .attr("width", width / data.length - 0.5 * 2)
-      .attr("height", d => height - yScale(d[Y_COL]))
-      .attr("fill", "blue")
-      .attr("data-legend", () => "Population")
-      .classed("bar", true);
-
-  // add the X Axis
-  chart.append("g")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis)
-    .append("text")
-      .attr("y", MARGIN.bottom / 2)
-      .attr("x", width / 2)
-      .attr("dy", ".71em")
-      .style("text-anchor", "middle")
-      .text("Year");
-
-  // add the Y Axis
-  chart.append("g")
-    .call(yAxis)
-    .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("x", - height/2)
-      .attr("y", - MARGIN.left * .97)
-      .attr("dy", ".71em")
-      .style("text-anchor", "middle")
-      .text("Population");
+    addLayer().selectAll(".bar")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("x", d => xScale(d[0]))
+    .attr("y", (d => height - yScale(d[1])))
+    .attr("height", (d => yScale(d[1])))
+    .attr("width", width / data.length - 0.5 * 2)
+    .attr("fill", "blue")
 }
 
 function drawGraph(data){
     addLayer().append("text")
-        .attr("x", (width / 2))
-        .attr("y", (MARGIN.top / 2))
+        .attr("x", width / 2)
+        .attr("y", 0)
         .attr("text-anchor", "middle")
         .style("font-size", "20px")
         .text("JavaScript Queries over Time");
