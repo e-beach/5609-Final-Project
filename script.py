@@ -48,7 +48,7 @@ def insert_xml(data):
         conn.commit()
 
 
-def soup(f, count):
+def soup(f):
     from bs4 import BeautifulSoup
     lines = open(f).read()
     soup = BeautifulSoup(lines, 'html.parser')
@@ -74,12 +74,11 @@ def science():
 def main():
     pass
 
-@main.command()
+@main.command(help='recreate the database from an xml file')
 @click.argument('xml_file')
-@click.argument('count', type=int)
-def recreate(xml_file, count):
+def recreate(xml_file):
     create_db()
-    insert_xml(soup(xml_file, count))
+    insert_xml(soup(xml_file))
 
 @main.command()
 def myquery():
