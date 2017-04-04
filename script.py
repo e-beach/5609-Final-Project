@@ -98,7 +98,7 @@ def showdb():
 @main.command()
 def server():
     import os
-    os.system('env FLASK_APP=script.py FLASK_DEBUG=1 Flask run')
+    os.system('env FLASK_APP=script.py FLASK_DEBUG=1 flask run')
 
 if __name__ == "__main__":
     main()
