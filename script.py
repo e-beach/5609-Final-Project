@@ -1,4 +1,4 @@
-#! python/bin/python3
+#!/usr/bin/python
 
 # Idea: The browser will have the data loaded in the format and we will expose functions
 
