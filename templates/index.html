@@ -25,14 +25,17 @@
 // The graph should show tags vs time for any tag I choose.
 // It should also show results for groups of tags.
 
+const jumbotronDimensions = document.querySelector('.jumbotron').getBoundingClientRect();
+
+const width = 850;
+const height = 350;
+
 const MARGIN = {
   top: 100,
   right: 50,
   bottom: 60,
-  left: 150
+  left: (jumbotronDimensions.left + jumbotronDimensions.right - width) / 2
 };
-const width = 850 - MARGIN.left - MARGIN.right;
-const height = 350 - MARGIN.top - MARGIN.bottom;
 
 const chart = d3.select("body")
       .append("div")
@@ -47,7 +50,7 @@ function addLayer(){
   return layer;
 }
 
-function drawBarGraph(data){
+function drawLineGraph(data){
     const xScale = d3.scaleTime()
         .domain(
             [d3.min(data, d=>d[0]),
@@ -57,17 +60,28 @@ function drawBarGraph(data){
         .domain(
             [ d3.min(data, d=>d[1]),
               d3.max(data, d=>d[1]) ])
-        .range([0,height])
+        .range([height,0])
 
-    addLayer().selectAll(".bar")
-    .data(data)
-    .enter()
-    .append("rect")
-    .attr("x", d => xScale(d[0]))
-    .attr("y", (d => height - yScale(d[1])))
-    .attr("height", (d => yScale(d[1])))
-    .attr("width", width / data.length - 0.5 * 2)
-    .attr("fill", "blue")
+    const xAxis = d3.axisBottom().scale(xScale);
+    const yAxis = d3.axisLeft().scale(yScale);
+
+    const lineGenerator = d3.line()
+        .x(d => xScale(d[0]))
+        .y(d => yScale(d[1]));
+
+
+    addLayer()
+        .append("path")
+        .attr("d", lineGenerator(data))
+        .style("stroke", "blue")
+        .style("stroke-width", 4)
+        .style("fill", "none");
+    addLayer()
+    .attr("transform", `translate(${MARGIN.left},${MARGIN.top + height})`)
+    .call(xAxis);
+    addLayer()
+        .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
+    .call(yAxis);
 }
 
 function drawGraph(data){
@@ -77,7 +91,7 @@ function drawGraph(data){
         .attr("text-anchor", "middle")
         .style("font-size", "20px")
         .text("JavaScript Queries over Time");
-    drawBarGraph(data);
+    drawLineGraph(data);
 }
 
 $.getJSON('data', (data) => {
