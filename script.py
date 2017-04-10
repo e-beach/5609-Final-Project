@@ -1,18 +1,11 @@
 #!/usr/bin/python
 
-# Idea: The browser will have the data loaded in the format and we will expose functions
-
-# [ ] create database
-# [ ] view data in browser using d3
-# [ ] run an interesting sql query in python
-# [ ] view the results graphed in d3
-
-# The visualization will allow the user to see multuple tags defined over time.
-# View python2 vs python3 over time, like google trends, but with stack overflow tags
-
 import sqlite3
 import click
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
+
+
+### Flask Server
 
 app = Flask(__name__)
 
@@ -22,14 +15,16 @@ def index():
 
 @app.route('/data')
 def data():
-    data = [list(row) for row in science()]
-    print(data)
+    tag = request.args.get('tag')
+    begin_date = request.args.get('start', '2000-01-01')
+    data = [list(row) for row in search_tag(tag, begin_date)]
     return jsonify(results=data)
 
 conn = sqlite3.connect('stack_overflow.db')
 c = conn.cursor()
 
 
+### Database population
 
 def create_db():
     try:
@@ -61,14 +56,17 @@ def soup(f):
             pass
 
 
-def science():
+def search_tag(tag, begin_date):
     return c.execute('''
             select ddate, count(*)
-                from (select tags, date(cdate) as ddate from POSTS)
-                where tags like "%java%"
+                from (select tags, date(cdate) as ddate from POSTS
+                        where cdate > "{begin_date}")
+                where tags like "%{tag}%"
             group by ddate
-        ''')
+        '''.format(tag=tag, begin_date=begin_date))
 
+
+### Command Line Interface
 
 @click.group()
 def main():
@@ -80,11 +78,11 @@ def recreate(xml_file):
     create_db()
     insert_xml(soup(xml_file))
 
-@main.command()
+@main.command(help="change this to whatever query you want to execute")
 def myquery():
     print('querying...')
     for row in c.execute('''
-        select tags from POSTS where tags like "%java%"
+        select * from Posts where cdate < '2008-08-20'
     '''):
         print(row)
 
