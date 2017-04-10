@@ -89,7 +89,7 @@ class StackOverflowChart {
 
     constructor(){
         this.queries = [];
-        this.color = 0;
+        this.color = -1;
         this.maxQueriesSingleDay = 0;
         this.yScale = null;
         this.dateStart = new Date('3000-01-01');  // positive inifinity  
@@ -98,8 +98,8 @@ class StackOverflowChart {
     }
 
     nextColor(){
-        this.colors = (this.colors + 1) % 10;
-        return d3.schemeCategory10[this.colors];
+        this.color = (this.color + 1) % 10;
+        return d3.schemeCategory10[this.color];
     }
 
     addQuery(tag, data){
@@ -128,6 +128,7 @@ class StackOverflowChart {
         this.queries.forEach(q => {
             drawLineGraph(q.tag, q.data, q.color, xScale, yScale);
         });
+        drawAxes(xScale, yScale);
      }
 
     removeQuery(tag){
@@ -140,25 +141,26 @@ class StackOverflowChart {
 
 
 function drawLineGraph(tag, data, colr, xScale, yScale){
-    const xAxis = d3.axisBottom().scale(xScale);
-    const yAxis = d3.axisLeft().scale(yScale);
-
     const lineGenerator = d3.line()
         .x(d => xScale(d[0]))
         .y(d => yScale(d[1]));
-
     addLayer()
         .append("path")
         .attr("d", lineGenerator(data))
         .style("stroke", colr)
         .style("stroke-width", 4)
         .style("fill", "none");
+}
+
+function drawAxes(xScale, yScale){
+    const xAxis = d3.axisBottom().scale(xScale);
+    const yAxis = d3.axisLeft().scale(yScale);
     addLayer()
         .attr("transform", `translate(${MARGIN.left},${MARGIN.top + height})`)
         .call(xAxis);
     addLayer()
-        .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
-        .call(yAxis);
+     .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
+     .call(yAxis);
 }
 
 function addGraph(){

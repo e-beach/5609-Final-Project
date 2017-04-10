@@ -63,6 +63,7 @@ def search_tag(tag, begin_date):
                         where cdate > "{begin_date}")
                 where tags like "%{tag}%"
             group by ddate
+            order by ddate ASC
         '''.format(tag=tag, begin_date=begin_date))
 
 
