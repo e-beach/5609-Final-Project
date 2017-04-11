@@ -7,7 +7,7 @@
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
         <!-- d3 -->
-        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="https://d3js.org/d3.v4.js"></script>
     </head>
     <body>
         <div class="container">
@@ -18,7 +18,7 @@
             </div>
             <form id='tagForm'>
             <div class="form-group row">
-                <label for="tag" class="col-2 col-form-label">TagName</label>
+                <label for="tag" class="col-2 col-form-label">Enter Tag</label>
                 <input class="form-control" type="text" value="JavaScript" id="tag">
             </div>
             <div class="form-group row">
@@ -26,6 +26,15 @@
             </div>
             </form>
         </div>
+
+        <div class="svg-container"></div>
+
+    <div class="container">
+    <ul class="list-group" id="vis-tag-list">
+        <li class="list-group-item list-group-item-success">Tags</li>
+    </ul>
+    </div>
+
     </body>
 <script>
 
@@ -51,7 +60,7 @@ const MARGIN = {
     left: (jumbotronDimensions.left + jumbotronDimensions.right - width) / 2
 };
 
-const chart = d3.select("body")
+const chart = d3.select("div.svg-container")
     .append("div")
     .append("svg")
     .attr("width", width + MARGIN.left + MARGIN.right)
@@ -94,7 +103,6 @@ class StackOverflowChart {
         this.yScale = null;
         this.dateStart = new Date('3000-01-01');  // positive inifinity  
         this.dateEnd =  new Date(0);  // negative infinity
-        addGraph();
     }
 
     nextColor(){
@@ -104,19 +112,47 @@ class StackOverflowChart {
 
     addQuery(tag, data){
         // remove the graphs. Each time a graph is added, redraw the entire chart to adjust for scaling issues.
-        chart.selectAll("*").remove(); 
-        this.queries.push({
-             tag, 
-             data, 
-             color: this.nextColor()
-        });
+        this.queries.push({ tag, data, color: this.nextColor() });
 
         if(data.length > 0){
             this.maxQueriesSingleDay = Math.max(this.maxQueriesSingleDay, d3.max(data, d=>d[1]));
             this.dateStart = new Date(Math.min(this.dateStart, d3.min(data, d=>d[0])));
             this.dateEnd = new Date(Math.max(this.dateEnd, d3.max(data, d=>d[0])));
         }
-     
+
+        this.addButton(tag);
+        this.repaint();
+     }
+
+
+    addButton(tag){
+
+        const div = $('<div/>', {
+            class: 'list-group-item',
+            text:  " " + tag,
+        }).prepend($('<span/>', {
+            class: "glyphicon glyphicon-trash",
+            style: "color: red",
+        }));
+        div.data('tag', tag);
+        div.click( (e) => {
+            console.log(div.data('tag'));
+            this.removeQuery(div.data('tag'));
+            div.remove();
+        });
+        div.appendTo('#vis-tag-list');
+    }
+
+    removeQuery(tag){
+        console.log("removing ", tag);
+        console.log(tag === "javascript");
+        const filtered = this.queries.filter(q => q.tag !== tag);
+        this.queries = filtered;  // delete the svg
+        this.repaint();
+    }
+
+    repaint(){
+        chart.selectAll("*").remove(); 
         const xScale = d3.scaleTime()
         .domain([this.dateStart, this.dateEnd])
         .range([0, width]);
@@ -125,16 +161,12 @@ class StackOverflowChart {
         .domain([0, this.maxQueriesSingleDay])
         .range([height,0]);
 
-        this.queries.forEach(q => {
-            drawLineGraph(q.tag, q.data, q.color, xScale, yScale);
-        });
+        addGraph();
         drawAxes(xScale, yScale);
-     }
-
-    removeQuery(tag){
-        const filtered = this.queries.filter(q => q.tag !== tag);
-        // delete the svg
-        this.queries = filtered;
+        this.queries.forEach(q => {
+            drawLineGraph(q.tag, interpolateData(q.data, this.dateStart, this.dateEnd),
+             q.color, xScale, yScale);
+        });
     }
 
 }
@@ -144,6 +176,7 @@ function drawLineGraph(tag, data, colr, xScale, yScale){
     const lineGenerator = d3.line()
         .x(d => xScale(d[0]))
         .y(d => yScale(d[1]));
+    console.log(lineGenerator(data));
     addLayer()
         .append("path")
         .attr("d", lineGenerator(data))
@@ -172,6 +205,25 @@ function addGraph(){
         .text("Queries over Time");
 }
 
+
+// convert data that may have few values to be 0
+// between start date and stop date.
+function interpolateData(data, startDate, stopDate){
+    console.log(data, startDate, stopDate);
+    const results = [];
+    let i = 0;
+    for(let d = new Date(startDate); d <= stopDate; d.setDate(d.getDate()+1)){
+        if (i < data.length && data[i][0].getTime() === d.getTime()){
+            const count =  data[i][1]];
+            i++;
+        } else {
+            const count = 0;
+        }
+        results.push(new Date(d), count);
+    }
+    return results;
+}
+
 function getData(tag){
     $.getJSON('data', { 
         tag,
@@ -187,4 +239,16 @@ const stackOverflowChart = new StackOverflowChart();
 getData('javascript');
 
     </script>
+
+<style>
+    ul.list-group:after {
+      clear: both;
+      display: block;
+      content: "";
+    }
+
+    .list-group-item {
+        float: left;
+    }
+</style>
 </html>
