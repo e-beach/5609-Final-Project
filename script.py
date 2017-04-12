@@ -2,12 +2,16 @@
 
 import sqlite3
 import click
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 
 ### Flask Server
 
 app = Flask(__name__)
+
+@app.route('/js/<path:path>')
+def send_js(path):
+    return send_from_directory('bower_components', path)
 
 @app.route('/')
 def index():
@@ -20,7 +24,7 @@ def data():
     data = [list(row) for row in search_tag(tag, begin_date)]
     return jsonify(results=data)
 
-conn = sqlite3.connect('stack_overflow.db')
+conn = sqlite3.connect('stack_overflow.db')  #('stack_overflow.db')
 c = conn.cursor()
 
 
@@ -35,32 +39,32 @@ def create_db():
     c.execute('create table POSTS (tags Text, cdate date)')
 
 
-
-def insert_xml(data):
-    for tag, cdate in data:
-        cmd = 'insert into POSTS (tags, cdate) values ("%s", "%s")' % (tag, cdate)
-        c.execute(cmd)
-        conn.commit()
-
-
+# see http://stackoverflow.com/questions/324214/what-is-the-fastest-way-to-parse-large-xml-docs-in-python
 def soup(f):
-    from bs4 import BeautifulSoup
-    lines = open(f).read()
-    soup = BeautifulSoup(lines, 'html.parser')
-    for i, post in enumerate(soup.find_all('row')):
-        try:
-            tags = post['tags']
-            cdate = post['creationdate']
-            yield tags, cdate
-        except KeyError:
-            pass
+    import xml.etree.ElementTree as xml
+    data = xml.iterparse(open(f))
+    _, root = data.next()
+    for i, eventelem in enumerate(data):
+        event, elem = eventelem
+        if event == "end":
+            try:
+                tag = elem.attrib['Tags']
+                cdate = elem.attrib['CreationDate']
+            except KeyError:
+                continue
+            cmd = 'insert into POSTS (tags, cdate) values ("%s", "%s")' % (tag, cdate)
+            c.execute(cmd)
+        if (i % 5000 == 0):
+            print ('commiting after %d rows' % i)
+            conn.commit()
+
 
 
 def search_tag(tag, begin_date):
     return c.execute('''
             select ddate, count(*)
                 from (select tags, date(cdate) as ddate from POSTS
-                        where cdate > "{begin_date}")
+                        where cdate > "{begin_date}" and strftime("%w", cdate) not in ("0","6"))
                 where tags like "%{tag}%"
             group by ddate
             order by ddate ASC
@@ -77,14 +81,14 @@ def main():
 @click.argument('xml_file')
 def recreate(xml_file):
     create_db()
-    insert_xml(soup(xml_file))
+    soup(xml_file)
 
 @main.command(help="change this to whatever query you want to execute")
 def myquery():
     print('querying...')
     for row in c.execute('''
-        select * from Posts where cdate < '2008-08-20'
-    '''):
+        select strftime("%w", cdate) from Posts where cdate > '2009-01-01' and strftime("%w", cdate) not in ("0","6")
+    '''): # skip the weekends: 0,6 == Saturday or Sunday.
         print(row)
 
 
