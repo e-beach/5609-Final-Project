@@ -126,7 +126,6 @@ class StackOverflowChart {
 
 
     addButton(tag){
-
         const div = $('<div/>', {
             class: 'list-group-item',
             text:  " " + tag,
@@ -136,7 +135,6 @@ class StackOverflowChart {
         }));
         div.data('tag', tag);
         div.click( (e) => {
-            console.log(div.data('tag'));
             this.removeQuery(div.data('tag'));
             div.remove();
         });
@@ -144,15 +142,13 @@ class StackOverflowChart {
     }
 
     removeQuery(tag){
-        console.log("removing ", tag);
-        console.log(tag === "javascript");
-        const filtered = this.queries.filter(q => q.tag !== tag);
-        this.queries = filtered;  // delete the svg
+        this.queries = this.queries.filter(q => q.tag !== tag);
         this.repaint();
     }
 
     repaint(){
         chart.selectAll("*").remove(); 
+
         const xScale = d3.scaleTime()
         .domain([this.dateStart, this.dateEnd])
         .range([0, width]);
@@ -164,7 +160,7 @@ class StackOverflowChart {
         addGraph();
         drawAxes(xScale, yScale);
         this.queries.forEach(q => {
-            drawLineGraph(q.tag, interpolateData(q.data, this.dateStart, this.dateEnd),
+            drawLineGraph(q.tag, fillInZeroes(q.data, this.dateStart, this.dateEnd),
              q.color, xScale, yScale);
         });
     }
@@ -176,7 +172,6 @@ function drawLineGraph(tag, data, colr, xScale, yScale){
     const lineGenerator = d3.line()
         .x(d => xScale(d[0]))
         .y(d => yScale(d[1]));
-    console.log(lineGenerator(data));
     addLayer()
         .append("path")
         .attr("d", lineGenerator(data))
@@ -208,18 +203,19 @@ function addGraph(){
 
 // convert data that may have few values to be 0
 // between start date and stop date.
-function interpolateData(data, startDate, stopDate){
+function fillInZeroes(data, startDate, stopDate){
     console.log(data, startDate, stopDate);
     const results = [];
     let i = 0;
+    let count;
     for(let d = new Date(startDate); d <= stopDate; d.setDate(d.getDate()+1)){
         if (i < data.length && data[i][0].getTime() === d.getTime()){
-            const count =  data[i][1]];
+            count = data[i][1];
             i++;
         } else {
-            const count = 0;
+            count = 0;
         }
-        results.push(new Date(d), count);
+        results.push([new Date(d), count]);
     }
     return results;
 }
@@ -238,7 +234,7 @@ function getData(tag){
 const stackOverflowChart = new StackOverflowChart();
 getData('javascript');
 
-    </script>
+</script>
 
 <style>
     ul.list-group:after {
