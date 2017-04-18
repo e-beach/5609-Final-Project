@@ -2,40 +2,18 @@
 
 import sqlite3
 import click
-import os
 import atexit
-import json
-from flask import Flask, jsonify, render_template, request, send_from_directory
-
 
 DB_NAME = 'full.db'
-CACHE_FILE = 'cache.json'
-
-### Flask Server
-
-app = Flask(__name__)
-
-@app.route('/js/<path:path>')
-def send_js(path):
-    return send_from_directory('bower_components', path)
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/data')
-def data():
-    tag = request.args.get('tag')
-    begin_date = request.args.get('start', '2000-01-01')
-    end_date = request.args.get('end', '3000-01-01')
-    data = search_tag(tag, begin_date, end_date)
-    return jsonify(results=data)
-
-conn = sqlite3.connect(DB_NAME)  #('stack_overflow.db')
-c = conn.cursor()
-
 
 ### Database population
+
+def setdb(db):
+    global conn
+    global c
+    conn = sqlite3.connect(db)
+    c = conn.cursor()
+
 
 def create_db():
     try:
@@ -68,62 +46,6 @@ def import_from_xml(f):
             print ('commiting after %d rows' % i)
             conn.commit()
 
-class Cache(object):
-    def __init__(self):
-        print('initializing cache')
-        try:
-            self.data = json.load(open(CACHE_FILE, 'r'))
-        except (IOError, ValueError):
-            print('loaded cache, but no data was found.')
-            self.data = {}
-
-    def __call__(self, tag, begin_date, end_date, results=None):
-        key = repr( (tag, begin_date, end_date) )
-        if results is None:
-            return self.data[key]
-        else:
-            print('actually caching data')
-            print('before', self.data)
-            self.data[key] = results
-            print('after', self.data)
-
-    def save(self):
-        print('saving data')
-        print(self.data)
-        json.dump(self.data, open(CACHE_FILE, 'w+'))
-
-cache = Cache()
-
-@atexit.register
-def save():
-    cache.save()
-
-# Excludes weekends because few people are programming during the weekend.
-# which creates a distracting oscillation in the graphs.
-def search_tag(tag, begin_date, end_date):
-    try:
-        return cache(tag, begin_date, end_date)
-    except KeyError:
-        pass
-    results =  c.execute('''
-        select ddate, count(*)
-            from (select tags, date(cdate) as ddate from POSTS
-                    where cdate > "{begin_date}" and cdate < "{end_date}" and strftime("%w", cdate) not in ("0","6")) 
-            where tags like "%{tag}%"
-        group by ddate
-    '''.format(tag=tag, begin_date=begin_date, end_date=end_date))
-    result_list = [list(row) for row in results]
-    print('trying to cache data')
-    cache(tag, begin_date, end_date, results=result_list)
-    return result_list
-
-
-
-def setdb(db):
-    global conn
-    global c
-    conn = sqlite3.connect(db)
-    c = conn.cursor()
 
 ### Command Line Interface
 
@@ -158,7 +80,7 @@ def showdb():
 @main.command()
 def server():
     import os
-    os.system('env FLASK_APP=script.py FLASK_DEBUG=1 flask run')
+    os.system('env FLASK_APP=server.py FLASK_DEBUG=1 flask run')
 
 if __name__ == "__main__":
     main()
