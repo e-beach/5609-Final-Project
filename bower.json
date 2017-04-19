@@ -1,0 +1,15 @@
+{
+  "name": "5609-Final-Project",
+  "homepage": "https://github.com/e-beach/5609-Final-Project",
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

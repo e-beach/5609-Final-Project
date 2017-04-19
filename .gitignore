@@ -1,0 +1,8 @@
+xml
+python
+foo*
+.idea
+*.db
+cache.json
+bower_components
+images
