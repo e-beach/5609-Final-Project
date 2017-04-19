@@ -108,7 +108,8 @@ class StackOverflowChart {
 
     addQuery(tag, data){
         // remove the graphs. Each time a graph is added, redraw the entire chart to adjust for scaling issues.
-        this.queries.push({ tag, data, color: this.nextColor() });
+        const query = { tag, data, color: this.nextColor() };
+        this.queries.push(query);
 
         if(data.length > 0){
             this.maxQueriesSingleDay = Math.max(this.maxQueriesSingleDay, d3.max(data, d=>d[1]));
@@ -117,29 +118,31 @@ class StackOverflowChart {
             // this.dateEnd = new Date(Math.max(this.dateEnd, d3.max(data, d=>d[0])));
         }
 
-        this.addButton(tag);
+        this.addButton(query);
         this.repaint();
      }
 
 
-    addButton(tag){
+    addButton(query){
         const div = $('<div/>', {
             class: 'list-group-item',
-            text:  " " + tag,
+            text:  " " + query.tag,
+            style: `border-color: ${query.color}; border-width: 4px`,
         }).prepend($('<span/>', {
             class: "glyphicon glyphicon-trash",
-            style: "color: red",
+            style: `color: ${query.color}`
+            //style: `color: red`,
         }));
-        div.data('tag', tag);
+        div.data('query', query);
         div.click( (e) => {
-            this.removeQuery(div.data('tag'));
+            this.removeQuery(div.data('query'));
             div.remove();
         });
         div.appendTo('#vis-tag-list');
     }
 
-    removeQuery(tag){
-        this.queries = this.queries.filter(q => q.tag !== tag);
+    removeQuery(query){
+        this.queries = this.queries.filter(q => q !== query);
         this.repaint();
     }
 
@@ -227,7 +230,7 @@ function getData(tag, start, end){
     });
 }
 
-const stackOverflowChart = new StackOverflowChart();
+let stackOverflowChart = new StackOverflowChart();
 getData('javascript', START_DATE, END_DATE);
 
 $("#tagForm").submit( (e) => {
@@ -236,11 +239,24 @@ $("#tagForm").submit( (e) => {
     const start = $('#start-date').val();
     const end = $('#end-date').val();
 
-    // chart needs values to set align of x-axis
-    stackOverflowChart.dateStart = new Date(start);
-    stackOverflowChart.dateEnd = new Date(end); 
+    const startDate = new Date(start);
+    const endDate = new Date(end);
 
-    getData(tag, start, end);
+    const oldTags = stackOverflowChart.queries.map(q => q.tag);
+
+    if (stackOverflowChart.dateStart.getTime() < startDate.getTime() 
+        || stackOverflowChart.dateEnd.getTime() > endDate.getTime()){
+        stackOverflowChart = new stackOverflowChart();
+        oldTags.forEach(t => getData(t, startDate, endDate));
+    }
+
+    // chart needs values to set align of x-axis
+    stackOverflowChart.dateStart = startDate;
+    stackOverflowChart.dateEnd = endDate; 
+
+    if (! oldTags.includes(tag)){ 
+        getData(tag, start, end);
+    }
 });
 
 $("#start-date").val(START_DATE);

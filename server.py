@@ -20,16 +20,16 @@ def send_js(path):
 
 @app.route('/')
 def index():
+    print(cache)
     return render_template('index.html')
 
 @app.route('/data')
 def data():
-    tag = request.args.get('tag')
+    tag = request.args.get('tag').strip().lower()
     begin_date = request.args.get('start', '2000-01-01')
     end_date = request.args.get('end', '3000-01-01')
     data = search_tag(tag, begin_date, end_date)
     return jsonify(results=data)
-
 
 
 
@@ -54,12 +54,15 @@ def search_tag(tag, begin_date, end_date):
     return result_list
 
 
+
 class Cache(object):
     def __init__(self):
         try:
             self.data = json.load(open(CACHE_FILE, 'r'))
         except (IOError, ValueError):
             self.data = {}
+        print(self.data.keys())
+        print(self)
 
     def __call__(self, tag, begin_date, end_date, results=None):
         key = repr( (tag, begin_date, end_date) )
@@ -70,5 +73,8 @@ class Cache(object):
 
     def save(self):
         json.dump(self.data, open(CACHE_FILE, 'w+'))
+
+    def __str__(self):
+        return repr(self.data)
 
 cache = Cache()
