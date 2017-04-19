@@ -9,6 +9,7 @@
         <!-- d3 -->
         <script src="https://d3js.org/d3.v4.js"></script>
         <script src="js/d3-tip/index.js"></script>
+        <script src="js/d3-legend/d3-legend.min.js"></script>
     </head>
     <body>
         <div class="container">
@@ -41,11 +42,12 @@
 
     <div class="container">
     <ul class="list-group" id="vis-tag-list">
-        <li class="list-group-item list-group-item-success">Tags</li>
+        <!--li class="list-group-item list-group-item-success">Tags</li-->
     </ul>
     </div>
 
     </body>
+
 <script>
 
 
@@ -162,6 +164,7 @@ class StackOverflowChart {
             drawLineGraph(q.tag, q.data, //fillInZeroes(q.data, this.dateStart, this.dateEnd), broken somehow
              q.color, xScale, yScale);
         });
+        addLayer().call(d3.legend);
     }
 
 }
@@ -192,12 +195,31 @@ function drawAxes(xScale, yScale){
 }
 
 function addGraph(){
+    
+    // title 
     addLayer().append("text")
         .attr("x", WIDTH / 2)
-        .attr("y", 0)
+        .attr("y", -HEIGHT / 10)
         .attr("text-anchor", "middle")
-        .style("font-size", "20px")
-        .text("Queries over Time");
+        .style("font-size", "30px")
+        .text("Queries Over Time");
+    
+    // x axis label
+    addLayer().append("text")
+        .attr("class", "x label")
+        .attr("text-anchor", "end")
+        .attr("x", WIDTH)
+        .attr("y", HEIGHT - 6)
+        .text("work days");
+
+    // y axis label
+    addLayer().append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", 6)
+        .attr("dy", ".75em")
+        .attr("transform", "rotate(-90)")
+        .text("Queries with tag");
 }
 
 
@@ -276,4 +298,5 @@ $("#end-date").val(END_DATE);
         float: left;
     }
 </style>
+       
 </html>
