@@ -29,6 +29,7 @@ def data():
     begin_date = request.args.get('start', '2000-01-01')
     end_date = request.args.get('end', '3000-01-01')
     data = search_tag(tag, begin_date, end_date)
+    print(data)
     return jsonify(results=data)
 
 
