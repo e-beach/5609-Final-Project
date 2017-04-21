@@ -9,7 +9,6 @@
         <!-- d3 -->
         <script src="https://d3js.org/d3.v4.js"></script>
         <script src="js/d3-tip/index.js"></script>
-        <script src="js/d3-legend/d3-legend.min.js"></script>
     </head>
     <body>
         <div class="container">
@@ -164,7 +163,6 @@ class StackOverflowChart {
             drawLineGraph(q.tag, q.data, //fillInZeroes(q.data, this.dateStart, this.dateEnd), broken somehow
              q.color, xScale, yScale);
         });
-        addLayer().call(d3.legend);
     }
 
 }
@@ -271,13 +269,13 @@ $("#tagForm").submit( (e) => {
         stackOverflowChart.queries.forEach(q => stackOverflowChart.removeQuery(q));
         stackOverflowChart = new StackOverflowChart();
         oldTags.forEach(t => getData(t, start, end));
-    }
+    } 
 
     // chart needs values to set align of x-axis
     stackOverflowChart.dateStart = startDate;
     stackOverflowChart.dateEnd = endDate; 
 
-    if (! oldTags.includes(tag)){ 
+    if ( (tag.trim().length !=0) && ! oldTags.includes(tag)){ 
         getData(tag, start, end);
     }
 });
