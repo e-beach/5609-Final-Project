@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/Library/Frameworks/Python.framework/Versions/3.5/bin/python3
 
 import sqlite3
 import click
@@ -13,6 +13,8 @@ def setdb(db):
     global c
     conn = sqlite3.connect(db)
     c = conn.cursor()
+
+setdb(DB_NAME)
 
 
 def create_db():
@@ -75,6 +77,20 @@ def myquery():
 def showdb():
     for row in c.execute('''select * from POSTS order by cdate'''):
         print(row)
+
+@main.command()
+def all_tags():
+    # TODO sort all tags by the number of times they occur. 
+    import re
+    tags = {}
+    for query in c.execute('''select tags from Posts where cdate > '2016-01-01' '''):
+        val = list(query)[0]
+        for t in re.split('<|>', val):
+            if t:
+                tags.add(t)
+    for t in tags:
+        print(t)
+
 
 
 @main.command()
