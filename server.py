@@ -22,6 +22,11 @@ def send_js(path):
 def index():
     return send_file('templates/index.html')
 
+@app.route('/script.js')
+def scriptdotjs():
+    response = send_file('script.js')
+    return response
+
 @app.route('/data')
 def data():
     tag = request.args.get('tag').strip().lower()
