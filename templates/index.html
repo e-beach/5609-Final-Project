@@ -9,26 +9,28 @@
         <!-- d3 -->
         <script src="https://d3js.org/d3.v4.js"></script>
         <script src="js/d3-tip/index.js"></script>
+
+        <script src="https://unpkg.com/vue/dist/vue.js"></script>
+
     </head>
     <body>
         <div class="container">
-            <div class="jumbotron">
+            <div class="jumbotron" id='app'>
                 <h1>
-                    Stack Overflow Tag Visualization
+                    {{ title }}
                 </h1>
             </div>
         <div class="row">
-        
             <form id='tagForm'>
             <div class="form-group row">
                 <label for="tag" class="col-md-12 col-form-label">Enter Tag</label>
                 <input class="form-control col-md-12" type="text" name="tagname" value="JavaScript" id="tag">
 
                 <label for="start-date" class="col-md-12 col-form-label">Start Date</label>
-                <input class="form-control col-md-12"  type="date" name="start-date" value="SET_BY_JS" id="start-date">
+                <input class="form-control col-md-12"  type="date" v-model="start" name="start-date" id="start-date">
 
                 <label for="end-date" class="col-md-12 col-form-label">End Date</label>
-                <input class="form-control col-md-12"  type="date" name="end-date" value="SET_BY_JS" id="end-date">
+                <input class="form-control col-md-12"  type="date" v-model="end" name="end-date" id="end-date">
             </div>
             <div class="form-group row">
                 <input class="btn btn-primary" type="submit">
@@ -45,13 +47,20 @@
     </ul>
     </div>
 
-    </body>
 
 <script>
 
-
 const START_DATE = '2017-01-01';
 const END_DATE = '2017-03-13';
+
+var app = new Vue({
+    el: '#app',
+    data: {
+        title : "Stack Overflow Tag Visualization",
+        start: START_DATE,
+        end: END_DATE
+    }
+});
 
 // add a d3 graph to the body of the webpage.
 // The graph should show tags vs time for any tag I choose.
@@ -81,16 +90,6 @@ function addLayer(){
     return layer;
 }
 
-const tip = d3.tip()
-  .attr('class', 'd3-tip')
-  .offset([-10, 0])
-  .html( (d) => {
-  
-  return `<span class="d3-tip-text">queries: <span class=d3-tip-text>${d[1]}`
-});
-
-
-
 class StackOverflowChart {
 
     constructor(){
@@ -98,7 +97,7 @@ class StackOverflowChart {
         this.color = -1;
         this.maxQueriesSingleDay = 0;
         this.yScale = null;
-        this.dateStart = new Date(START_DATE);  // positive inifinity  
+        this.dateStart = new Date(START_DATE);  // positive inifinity
         this.dateEnd =  new Date(END_DATE);  // negative infinity
     }
 
@@ -147,7 +146,7 @@ class StackOverflowChart {
     }
 
     repaint(){
-        chart.selectAll("*").remove(); 
+        chart.selectAll("*").remove();
 
         const xScale = d3.scaleTime()
         .domain([this.dateStart, this.dateEnd])
@@ -165,6 +164,10 @@ class StackOverflowChart {
         });
     }
 
+    tags(){
+        return this.queries.map(q => q.tag);
+    }
+
 }
 
 
@@ -172,7 +175,7 @@ function drawLineGraph(tag, data, colr, xScale, yScale){
     const lineGenerator = d3.line()
         .x(d => xScale(d[0]))
         .y(d => yScale(d[1]));
-        
+
     addLayer()
         .append("path")
         .attr("d", lineGenerator(data))
@@ -193,15 +196,15 @@ function drawAxes(xScale, yScale){
 }
 
 function addGraph(){
-    
-    // title 
+
+    // title
     addLayer().append("text")
         .attr("x", WIDTH / 2)
         .attr("y", -HEIGHT / 10)
         .attr("text-anchor", "middle")
         .style("font-size", "30px")
         .text("Queries Over Time");
-    
+
     // x axis label
     addLayer().append("text")
         .attr("class", "x label")
@@ -245,12 +248,28 @@ function getData(tag, start, end){
         console.log(data);
         // convert strings to dates
         const data_with_dates = data.results.map( (d) => [  new Date(d[0]), d[1] ] );
-        stackOverflowChart.addQuery(tag, data_with_dates);
+        soChart.addQuery(tag, data_with_dates);
     });
 }
 
-let stackOverflowChart = new StackOverflowChart();
+let soChart = new StackOverflowChart();
 getData('JavaScript', START_DATE, END_DATE);
+
+function setDate(start, end){
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (soChart.dateStart.getTime() !== startDate.getTime() || soChart.dateEnd.getTime() !== endDate.getTime()){
+        soChart.queries.forEach(q => soChart.removeQuery(q));
+        const tags = soChart.tags();
+        soChart = new StackOverflowChart();
+        tags.forEach(t => getData(t, start, end));
+
+        // chart needs values to set align of x-axis
+        soChart.dateStart = startDate;
+        soChart.dateEnd = endDate;
+    }
+}
 
 $("#tagForm").submit( (e) => {
     e.preventDefault();
@@ -258,24 +277,9 @@ $("#tagForm").submit( (e) => {
     const start = $('#start-date').val();
     const end = $('#end-date').val();
 
-    const startDate = new Date(start);
-    const endDate = new Date(end);
+    setDate(start, end);
 
-    const oldTags = stackOverflowChart.queries.map(q => q.tag);
-
-    if (stackOverflowChart.dateStart.getTime() !== startDate.getTime() 
-        || stackOverflowChart.dateEnd.getTime() !== endDate.getTime()){
-        console.log("getting new tag date ranges");
-        stackOverflowChart.queries.forEach(q => stackOverflowChart.removeQuery(q));
-        stackOverflowChart = new StackOverflowChart();
-        oldTags.forEach(t => getData(t, start, end));
-    } 
-
-    // chart needs values to set align of x-axis
-    stackOverflowChart.dateStart = startDate;
-    stackOverflowChart.dateEnd = endDate; 
-
-    if ( (tag.trim().length !=0) && ! oldTags.includes(tag)){ 
+    if ( (tag.trim().length !=0) && ! soChart.tags().includes(tag)){
         getData(tag, start, end);
     }
 });
@@ -296,5 +300,6 @@ $("#end-date").val(END_DATE);
         float: left;
     }
 </style>
-       
+    </body>
+
 </html>
