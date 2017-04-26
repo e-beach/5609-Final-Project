@@ -10,7 +10,12 @@
         <script src="https://d3js.org/d3.v4.js"></script>
         <script src="js/d3-tip/index.js"></script>
 
+        <!-- vue -->
         <script src="https://unpkg.com/vue/dist/vue.js"></script>
+
+        <!-- custom scripts -->
+        <script src="script.js"></script>
+        <link rel="stylesheet" href="style.css">
 
     </head>
     <body>
@@ -37,27 +42,20 @@
             </div>
         </div>
 
-        <div class="svg-container"></div>
+
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="col-xs-6">
+                    <div class="svg-container"></div>
+                </div>
+                </div>
+            </div>
+        </div>
 
         <div class="container">
             <ul class="list-group" id="vis-tag-list">
                 <!--li class="list-group-item list-group-item-success">Tags</li-->
             </ul>
         </div>
-
-        <script src="script.js"></script>
-
-        <style>
-ul.list-group:after {
-    clear: both;
-    display: block;
-    content: "";
-}
-
-    .list-group-item {
-        float: left;
-    }
-        </style>
     </body>
-
 </html>

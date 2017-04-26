@@ -1,3 +1,4 @@
+$(function(){
 const START_DATE = '2017-01-01';
 const END_DATE = '2017-03-13';
 
@@ -16,13 +17,16 @@ var app = new Vue({
 
 const jumbotronDimensions = $('.jumbotron')[0].getBoundingClientRect();
 
-const WIDTH = 850;
-const HEIGHT = 350;
+const viewPortWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+const viewPortHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
+const WIDTH = viewPortWidth / 3;
+const HEIGHT = viewPortHeight / 3;
 const MARGIN = {
     top: 100,
     right: 50,
     bottom: 60,
-    left: (jumbotronDimensions.left + jumbotronDimensions.right - WIDTH) / 2
+    left: (jumbotronDimensions.left) / 2
 };
 
 const chart = d3.select("div.svg-container")
@@ -240,3 +244,4 @@ $("#tagForm").submit( (e) => {
 
 $("#start-date").val(START_DATE);
 $("#end-date").val(END_DATE);
+});

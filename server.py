@@ -11,7 +11,7 @@ CACHE_FILE = 'cache.json'
 ### Flask Server
 
 app = Flask(__name__)
-conn = sqlite3.connect(DB_NAME)  #('stack_overflow.db')
+conn = sqlite3.connect(DB_NAME)
 c = conn.cursor()
 
 @app.route('/js/<path:path>')
@@ -23,9 +23,12 @@ def index():
     return send_file('templates/index.html')
 
 @app.route('/script.js')
-def scriptdotjs():
-    response = send_file('script.js')
-    return response
+def script():
+    return send_file('script.js')
+
+@app.route('/style.css')
+def style():
+    return send_file('style.css')
 
 @app.route('/data')
 def data():
