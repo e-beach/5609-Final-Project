@@ -107,10 +107,11 @@ class StackOverflowChart {
     addQuery(tag, data){
         // remove the graphs. Each time a graph is added, redraw the entire chart to adjust for scaling issues.
         const query = { tag, data, color: this.nextColor() };
+        query.maxQueriesSingleDay = d3.max(data, d=>d[1]);
         this.queries.push(query);
 
         if(data.length > 0){
-            this.maxQueriesSingleDay = Math.max(this.maxQueriesSingleDay, d3.max(data, d=>d[1]));
+            this.maxQueriesSingleDay = Math.max(this.maxQueriesSingleDay, query.maxQueriesSingleDay);
             // We are allowing the user to select the start and end date, rather than the range of data.
             // this.dateStart = new Date(Math.min(this.dateStart, d3.min(data, d=>d[0])));
             // this.dateEnd = new Date(Math.max(this.dateEnd, d3.max(data, d=>d[0])));
@@ -138,8 +139,13 @@ class StackOverflowChart {
     }
 
     removeQuery(query){
+
         query.div.remove();
         this.queries = this.queries.filter(q => q !== query);
+
+        // reset max queries so that scale decreases when deleting a query
+        this.maxQueriesSingleDay = d3.max(this.queries.map(q => q.maxQueriesSingleDay));
+
         this.repaint();
     }
 
