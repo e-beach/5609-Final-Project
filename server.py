@@ -30,6 +30,10 @@ def script():
 def style():
     return send_file('style.css')
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_file('favicon.ico')
+
 @app.route('/data')
 def data():
     tag = request.args.get('tag').strip().lower()
