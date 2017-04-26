@@ -3,7 +3,7 @@
 import sqlite3
 import atexit
 import json
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, jsonify, render_template, request, send_from_directory, send_file
 
 DB_NAME = 'full.db'
 CACHE_FILE = 'cache.json'
@@ -20,7 +20,7 @@ def send_js(path):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return send_file('templates/index.html')
 
 @app.route('/data')
 def data():
