@@ -20,35 +20,33 @@
                     {{ title }}
                 </h1>
             </div>
-        <div class="row">
-            <form id='tagForm'>
-            <div class="form-group row">
-                <label for="tag" class="col-md-12 col-form-label">Enter Tag</label>
-                <input class="form-control col-md-12" type="text" name="tagname" value="JavaScript" id="tag">
+            <div class="row">
+                <form id='tagForm'>
+                    <div class="form-inline">
+                        <label for="tag" class="col-md-1 text-center col-form-label">Enter Tag</label>
+                        <input class="form-control col-md-2" type="text" name="tagname" value="JavaScript" id="tag">
 
-                <label for="start-date" class="col-md-12 col-form-label">Start Date</label>
-                <input class="form-control col-md-12"  type="date" v-model="start" name="start-date" id="start-date">
+                        <label for="start-date" class="col-md-2 text-center col-form-label">Start Date</label>
+                        <input class="form-control col-md-2"  type="date" name="start-date" id="start-date">
 
-                <label for="end-date" class="col-md-12 col-form-label">End Date</label>
-                <input class="form-control col-md-12"  type="date" v-model="end" name="end-date" id="end-date">
+                        <label for="end-date" class="col-md-1 text-center col-form-label">End Date</label>
+                        <input class="form-control col-md-2"  type="date" name="end-date" id="end-date">
+                    </div>
+                    <input class="btn btn-primary col-md-2" type="submit">
+                </form>
             </div>
-            <div class="form-group row">
-                <input class="btn btn-primary" type="submit">
-            </div>
-            </form>
-        </div>
         </div>
 
         <div class="svg-container"></div>
 
-    <div class="container">
-    <ul class="list-group" id="vis-tag-list">
-        <!--li class="list-group-item list-group-item-success">Tags</li-->
-    </ul>
-    </div>
+        <div class="container">
+            <ul class="list-group" id="vis-tag-list">
+                <!--li class="list-group-item list-group-item-success">Tags</li-->
+            </ul>
+        </div>
 
 
-<script>
+        <script>
 
 const START_DATE = '2017-01-01';
 const END_DATE = '2017-03-13';
@@ -78,10 +76,10 @@ const MARGIN = {
 };
 
 const chart = d3.select("div.svg-container")
-    .append("div")
-    .append("svg")
-    .attr("width", WIDTH + MARGIN.left + MARGIN.right)
-    .attr("height", HEIGHT + MARGIN.top + MARGIN.bottom);
+.append("div")
+.append("svg")
+.attr("width", WIDTH + MARGIN.left + MARGIN.right)
+.attr("height", HEIGHT + MARGIN.top + MARGIN.bottom);
 
 // Add another graphic onto same svg. must be called after createChart()
 function addLayer(){
@@ -120,7 +118,7 @@ class StackOverflowChart {
 
         this.addButton(query);
         this.repaint();
-     }
+    }
 
 
     addButton(query){
@@ -131,7 +129,7 @@ class StackOverflowChart {
         }).prepend($('<span/>', {
             class: "glyphicon glyphicon-trash",
             style: `color: ${query.color}`
-            //style: `color: red`,
+                //style: `color: red`,
         }));
         div.data('query', query);
         div.click( (e) => this.removeQuery(div.data('query')));
@@ -149,18 +147,18 @@ class StackOverflowChart {
         chart.selectAll("*").remove();
 
         const xScale = d3.scaleTime()
-        .domain([this.dateStart, this.dateEnd])
-        .range([0, WIDTH]);
+            .domain([this.dateStart, this.dateEnd])
+            .range([0, WIDTH]);
 
         const yScale = d3.scaleLinear()
-        .domain([0, this.maxQueriesSingleDay])
-        .range([HEIGHT,0]);
+            .domain([0, this.maxQueriesSingleDay])
+            .range([HEIGHT,0]);
 
         addGraph();
         drawAxes(xScale, yScale);
         this.queries.forEach(q => {
             drawLineGraph(q.tag, q.data, //fillInZeroes(q.data, this.dateStart, this.dateEnd), broken somehow
-             q.color, xScale, yScale);
+                    q.color, xScale, yScale);
         });
     }
 
@@ -191,8 +189,8 @@ function drawAxes(xScale, yScale){
         .attr("transform", `translate(${MARGIN.left},${MARGIN.top + HEIGHT})`)
         .call(xAxis);
     addLayer()
-     .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
-     .call(yAxis);
+        .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
+        .call(yAxis);
 }
 
 function addGraph(){
@@ -287,19 +285,19 @@ $("#tagForm").submit( (e) => {
 $("#start-date").val(START_DATE);
 $("#end-date").val(END_DATE);
 
-</script>
+        </script>
 
-<style>
-    ul.list-group:after {
-      clear: both;
-      display: block;
-      content: "";
-    }
+        <style>
+ul.list-group:after {
+    clear: both;
+    display: block;
+    content: "";
+}
 
     .list-group-item {
         float: left;
     }
-</style>
+        </style>
     </body>
 
 </html>
