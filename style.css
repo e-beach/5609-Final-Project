@@ -4,6 +4,14 @@ ul.list-group:after {
     content: "";
 }
 
-.list-group-item {
+.current-tag {
     float: left;
+}
+
+.so-title {
+    font-size: 20px;
+}
+
+#related {
+    margin-top: 50px;
 }

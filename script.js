@@ -1,13 +1,39 @@
 $(function(){
-const START_DATE = '2017-01-01';
-const END_DATE = '2017-03-13';
+
+// source: http://stackoverflow.com/questions/610406/javascript-equivalent-to-printf-string-format
+if (!String.prototype.format) { // First, checks if it isn't implemented yet.
+  String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) { 
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+
+function Datestring(s){
+    return {
+        string: s,
+        date: new Date(s),
+        equals: (d) => d.string === s
+    }
+}
+
+const START_DATE = Datestring('2017-01-01');
+const END_DATE = Datestring('2017-03-13');
+
+
+Vue.component('related-tag', {
+    template: '<div>{{ tag }}</div'
+});
 
 var app = new Vue({
     el: '#app',
     data: {
         title : "Stack Overflow Tag Visualization",
-        start: START_DATE,
-        end: END_DATE
+        relatedTags: [ ]
     }
 });
 
@@ -16,7 +42,6 @@ var app = new Vue({
 // It should also show results for groups of tags.
 
 const jumbotronDimensions = $('.jumbotron')[0].getBoundingClientRect();
-
 const viewPortWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
 const viewPortHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
 
@@ -49,8 +74,8 @@ class StackOverflowChart {
         this.color = -1;
         this.maxQueriesSingleDay = 0;
         this.yScale = null;
-        this.dateStart = new Date(START_DATE);  // positive inifinity
-        this.dateEnd =  new Date(END_DATE);  // negative infinity
+        this.start = START_DATE;  // positive inifinity
+        this.end =  END_DATE;  // negative infinity
     }
 
     nextColor(){
@@ -66,9 +91,6 @@ class StackOverflowChart {
 
         if(data.length > 0){
             this.maxQueriesSingleDay = Math.max(this.maxQueriesSingleDay, query.maxQueriesSingleDay);
-            // We are allowing the user to select the start and end date, rather than the range of data.
-            // this.dateStart = new Date(Math.min(this.dateStart, d3.min(data, d=>d[0])));
-            // this.dateEnd = new Date(Math.max(this.dateEnd, d3.max(data, d=>d[0])));
         }
 
         this.addButton(query);
@@ -78,13 +100,12 @@ class StackOverflowChart {
 
     addButton(query){
         const div = $('<div/>', {
-            class: 'list-group-item',
+            class: 'list-group-item current-tag',
             text:  " " + query.tag,
             style: `border-color: ${query.color}; border-width: 4px`,
         }).prepend($('<span/>', {
             class: "glyphicon glyphicon-trash",
             style: `color: ${query.color}`
-                //style: `color: red`,
         }));
         div.data('query', query);
         div.click( (e) => this.removeQuery(div.data('query')));
@@ -107,7 +128,7 @@ class StackOverflowChart {
         chart.selectAll("*").remove();
 
         const xScale = d3.scaleTime()
-            .domain([this.dateStart, this.dateEnd])
+            .domain([this.start.date, this.end.date])
             .range([0, WIDTH]);
 
         const yScale = d3.scaleLinear()
@@ -117,7 +138,7 @@ class StackOverflowChart {
         addGraph();
         drawAxes(xScale, yScale);
         this.queries.forEach(q => {
-            drawLineGraph(q.tag, q.data, //fillInZeroes(q.data, this.dateStart, this.dateEnd), broken somehow
+            drawLineGraph(q.tag, q.data, //fillInZeroes(q.data, this.start, this.end), broken somehow
                     q.color, xScale, yScale);
         });
     }
@@ -128,6 +149,7 @@ class StackOverflowChart {
 
 }
 
+let soChart = new StackOverflowChart();
 
 function drawLineGraph(tag, data, colr, xScale, yScale){
     const lineGenerator = d3.line()
@@ -159,8 +181,8 @@ function addGraph(){
     addLayer().append("text")
         .attr("x", WIDTH / 2)
         .attr("y", -HEIGHT / 10)
+        .classed("so-title", "true")
         .attr("text-anchor", "middle")
-        .style("font-size", "30px")
         .text("Queries Over Time");
 
     // x axis label
@@ -181,24 +203,15 @@ function addGraph(){
         .text("Queries with tag");
 }
 
-
-// convert data that may have few values to be 0
-// between start date and stop date.
-function fillInZeroes(data, startDate, stopDate){
-    console.log(data, startDate, stopDate);
-    const results = [];
-    let i = 0;
-    let count;
-    for(let d = new Date(startDate); d <= stopDate; d.setDate(d.getDate()+1)){
-        if (i < data.length && data[i][0].getTime() === d.getTime()){
-            count = data[i][1];
-            i++;
-        } else {
-            count = 0;
-        }
-        results.push([new Date(d), count]);
-    }
-    return results;
+function setRelatedTags(tag){
+    const RELATED_TAGS = 'https://api.stackexchange.com/2.2/tags/{0}/related?site=stackoverflow'
+    const url = RELATED_TAGS.format(tag);
+    const MAX_RELATED_TAGS = 10;
+    $.getJSON(url, (data) => {
+        // first item is tag itself, which we don't want.
+        const related = data.items.map( blob => blob.name ).slice(1, MAX_RELATED_TAGS+1);
+        app.relatedTags = related;
+    });
 }
 
 function getData(tag, start, end){
@@ -210,38 +223,42 @@ function getData(tag, start, end){
     });
 }
 
-let soChart = new StackOverflowChart();
-getData('JavaScript', START_DATE, END_DATE);
 
 function setDate(start, end){
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-
-    if (soChart.dateStart.getTime() !== startDate.getTime() || soChart.dateEnd.getTime() !== endDate.getTime()){
+    if (! (start.equals(soChart.start) && end.equals(soChart.end)) ){
         soChart.queries.forEach(q => soChart.removeQuery(q));
         const tags = soChart.tags();
         soChart = new StackOverflowChart();
         tags.forEach(t => getData(t, start, end));
 
         // chart needs values to set align of x-axis
-        soChart.dateStart = startDate;
-        soChart.dateEnd = endDate;
+        soChart.start = startDate;
+        soChart.end = endDate;
     }
+}
+
+function getNewTag(tag, start, end){
+    getData(tag, start.string, end.string);
+    app.currentTag = tag;
+    setRelatedTags(tag);
 }
 
 $("#tagForm").submit( (e) => {
     e.preventDefault();
     const tag = $('#tag').val();
-    const start = $('#start-date').val();
-    const end = $('#end-date').val();
+    const start = Datestring($('#start-date').val());
+    const end = Datestring($('#end-date').val());
 
     setDate(start, end);
 
     if ( (tag.trim().length !=0) && ! soChart.tags().includes(tag)){
-        getData(tag, start, end);
+        getNewTag(tag, start, end);
     }
 });
 
-$("#start-date").val(START_DATE);
-$("#end-date").val(END_DATE);
+// initial query
+$("#start-date").val(START_DATE.string);
+$("#end-date").val(END_DATE.string);
+getNewTag('javascript', START_DATE, END_DATE);
+
 });
