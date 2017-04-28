@@ -1,10 +1,11 @@
 $(function(){
+let soChart;
 
 // source: http://stackoverflow.com/questions/610406/javascript-equivalent-to-printf-string-format
 if (!String.prototype.format) { // First, checks if it isn't implemented yet.
   String.prototype.format = function() {
     var args = arguments;
-    return this.replace(/{(\d+)}/g, function(match, number) { 
+    return this.replace(/{(\d+)}/g, function(match, number) {
       return typeof args[number] != 'undefined'
         ? args[number]
         : match
@@ -29,11 +30,17 @@ Vue.component('related-tag', {
     template: '<div>{{ tag }}</div'
 });
 
-var app = new Vue({
+window.app = new Vue({
     el: '#app',
     data: {
         title : "Stack Overflow Tag Visualization",
-        relatedTags: [ ]
+        relatedTags: [ ],
+        currentTag: "",
+    },
+    // expose these to html
+    methods: {
+        getNewTag,
+        chart: () => soChart
     }
 });
 
@@ -97,7 +104,6 @@ class StackOverflowChart {
         this.repaint();
     }
 
-
     addButton(query){
         const div = $('<div/>', {
             class: 'list-group-item current-tag',
@@ -149,7 +155,9 @@ class StackOverflowChart {
 
 }
 
-let soChart = new StackOverflowChart();
+
+soChart = new StackOverflowChart();
+
 
 function drawLineGraph(tag, data, colr, xScale, yScale){
     const lineGenerator = d3.line()
@@ -164,6 +172,7 @@ function drawLineGraph(tag, data, colr, xScale, yScale){
         .style("fill", "none")
 }
 
+
 function drawAxes(xScale, yScale){
     const xAxis = d3.axisBottom().scale(xScale);
     const yAxis = d3.axisLeft().scale(yScale);
@@ -174,6 +183,7 @@ function drawAxes(xScale, yScale){
         .attr("transform", `translate(${MARGIN.left},${MARGIN.top})`)
         .call(yAxis);
 }
+
 
 function addGraph(){
 
@@ -203,6 +213,7 @@ function addGraph(){
         .text("Queries with tag");
 }
 
+
 function setRelatedTags(tag){
     const RELATED_TAGS = 'https://api.stackexchange.com/2.2/tags/{0}/related?site=stackoverflow'
     const url = RELATED_TAGS.format(tag);
@@ -214,7 +225,10 @@ function setRelatedTags(tag){
     });
 }
 
+
 function getData(tag, start, end){
+    start = start.string;
+    end = end.string;
     $.getJSON('data', { tag, start, end }, (data) => {
         console.log(data);
         // convert strings to dates
@@ -226,22 +240,25 @@ function getData(tag, start, end){
 
 function setDate(start, end){
     if (! (start.equals(soChart.start) && end.equals(soChart.end)) ){
-        soChart.queries.forEach(q => soChart.removeQuery(q));
         const tags = soChart.tags();
+        soChart.queries.forEach(q => soChart.removeQuery(q));
         soChart = new StackOverflowChart();
-        tags.forEach(t => getData(t, start, end));
 
         // chart needs values to set align of x-axis
-        soChart.start = startDate;
-        soChart.end = endDate;
+        soChart.start = start;
+        soChart.end = end;
+
+        tags.forEach(t => getData(t, start, end));
+
     }
 }
 
-function getNewTag(tag, start, end){
-    getData(tag, start.string, end.string);
+function getNewTag(tag, start=soChart.start, end=soChart.end){
+    getData(tag, start, end);
     app.currentTag = tag;
     setRelatedTags(tag);
 }
+
 
 $("#tagForm").submit( (e) => {
     e.preventDefault();
@@ -256,7 +273,7 @@ $("#tagForm").submit( (e) => {
     }
 });
 
-// initial query
+// initial querky
 $("#start-date").val(START_DATE.string);
 $("#end-date").val(END_DATE.string);
 getNewTag('javascript', START_DATE, END_DATE);
