@@ -229,8 +229,9 @@ function setRelatedTags(tag){
 function getData(tag, start, end){
     start = start.string;
     end = end.string;
-    $.getJSON('data', { tag, start, end }, (data) => {
-        console.log(data);
+    $.getJSON('data', { tag }, (data) => {
+        // discard what we don't need
+        data.results = data.results.filter(d => d[0] > start).filter(d => d[0] < end);
         // convert strings to dates
         const data_with_dates = data.results.map( (d) => [  new Date(d[0]), d[1] ] );
         soChart.addQuery(tag, data_with_dates);
