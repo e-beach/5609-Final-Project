@@ -19,43 +19,54 @@
 
     </head>
     <body>
-        <div class="container">
-            <div class="jumbotron" id='app'>
-                <h1>
-                    {{ title }}
-                </h1>
+        <div id='app'>
+            <div class="container">
+                <div class="jumbotron">
+                    <h1>
+                        {{ title }}
+                    </h1>
+                </div>
+                <div class="row">
+                    <form id='tagForm'>
+                        <div class="form-inline">
+                            <label for="tag" class="col-md-1 text-center col-form-label">Enter Tag</label>
+                            <input class="form-control col-md-2" type="text" name="tagname" value="JavaScript" id="tag">
+
+                            <label for="start-date" class="col-md-2 text-center col-form-label">Start Date</label>
+                            <input class="form-control col-md-2"  type="date" name="start-date" id="start-date">
+
+                            <label for="end-date" class="col-md-1 text-center col-form-label">End Date</label>
+                            <input class="form-control col-md-2"  type="date" name="end-date" id="end-date">
+                        </div>
+                        <input class="btn btn-primary col-md-2" type="submit">
+                    </form>
+                </div>
             </div>
-            <div class="row">
-                <form id='tagForm'>
-                    <div class="form-inline">
-                        <label for="tag" class="col-md-1 text-center col-form-label">Enter Tag</label>
-                        <input class="form-control col-md-2" type="text" name="tagname" value="JavaScript" id="tag">
 
-                        <label for="start-date" class="col-md-2 text-center col-form-label">Start Date</label>
-                        <input class="form-control col-md-2"  type="date" name="start-date" id="start-date">
 
-                        <label for="end-date" class="col-md-1 text-center col-form-label">End Date</label>
-                        <input class="form-control col-md-2"  type="date" name="end-date" id="end-date">
+            <div class="container-fluid">
+                <div class="row-fluid">
+                    <div class="col-xs-6">
+                        <div class="svg-container"></div>
                     </div>
-                    <input class="btn btn-primary col-md-2" type="submit">
-                </form>
-            </div>
-        </div>
-
-
-        <div class="container-fluid">
-            <div class="row-fluid">
-                <div class="col-xs-6">
-                    <div class="svg-container"></div>
+                    <div class="col-xs-2 col-xs-offset-2" id='related'>
+                        <p class="text-center so-title"> Tags Related To {{ currentTag }} </p>
+                        <ul class="list-group" id="related tags">
+                            <div v-for="tag in relatedTags" v-on:click="getNewTag(tag)" class="row">
+                                <div class="btn btn-default col-xs-12">
+                                    {{ tag }}
+                                </div>
+                            </div>
+                        </ul>
+                    </div>
                 </div>
-                </div>
             </div>
-        </div>
 
-        <div class="container">
-            <ul class="list-group" id="vis-tag-list">
-                <!--li class="list-group-item list-group-item-success">Tags</li-->
-            </ul>
-        </div>
+            <div class="container">
+                <ul class="list-group" id="vis-tag-list">
+                    <!--li class="list-group-item list-group-item-success">Tags</li-->
+                </ul>
+            </div>
+        </div> <!-- end vue app -->
     </body>
 </html>
