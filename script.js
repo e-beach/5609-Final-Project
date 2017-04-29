@@ -1,5 +1,5 @@
 $(function(){
-let soChart;
+let soChart
 
 // source: http://stackoverflow.com/questions/610406/javascript-equivalent-to-printf-string-format
 if (!String.prototype.format) { // First, checks if it isn't implemented yet.
@@ -31,11 +31,11 @@ window.app = new Vue({
         title : "Stack Overflow Tag Visualization",
         relatedTags: [ ],
         currentTag: "",
+        soChart: {}  // set later
     },
     // expose these to html
     methods: {
         getNewTag,
-        chart: () => soChart
     }
 });
 
@@ -53,16 +53,12 @@ class StackOverflowChart {
     nextColor(){
         const scale = d3.scale.category20().domain(_.range(20));
         this.color = (this.color + 1) % 10;
-        const color = scale(this.color);
-        console.log('color:', color);
-        return color;
+        return scale(this.color);
     }
 
     addQuery(tag, data){
-        console.log("adding query...");
         const query = { tag, data, color: this.nextColor() };
         this.queries.push(query);
-        this.addButton(query);
 
         const format = {
             bindto: '#svg-container',
@@ -87,24 +83,8 @@ class StackOverflowChart {
 
     }
 
-    addButton(query){
-        const div = $('<div/>', {
-            class: 'list-group-item current-tag',
-            text:  " " + query.tag,
-            style: `border-color: ${query.color}; border-width: 4px`,
-        }).prepend($('<span/>', {
-            class: "glyphicon glyphicon-trash",
-            style: `color: ${query.color}`
-        }));
-        div.data('query', query);
-        div.click( (e) => this.removeQuery(div.data('query')));
-        div.appendTo('#vis-tag-list');
-        query.div = div;
-    }
-
     removeQuery(query){
         this.chart.unload(query.tag);
-        query.div.remove();
         this.queries = this.queries.filter(q => q !== query);
     }
 
@@ -114,7 +94,7 @@ class StackOverflowChart {
 
 }
 
-soChart = new StackOverflowChart();
+app.soChart = soChart = new StackOverflowChart();
 
 function setRelatedTags(tag){
     const RELATED_TAGS = 'https://api.stackexchange.com/2.2/tags/{0}/related?site=stackoverflow'
@@ -132,11 +112,9 @@ function getData(tag, start, end){
     start = start.string;
     end = end.string;
     $.getJSON('data', { tag }, (data) => {
-        // discard what we don't need
-        data.results = data.results.filter(d => d[0] > start).filter(d => d[0] < end);
-        // convert strings to dates
-        const data_with_dates = data.results.map( (d) => [  new Date(d[0]), d[1] ] );
-        soChart.addQuery(tag, data_with_dates);
+        const dataInRange = data.results.filter( (d) => start <= d[0] && d[0] <= end);
+        const dataWithDates = dataInRange.map( (d) => [ new Date(d[0]), d[1] ] );
+        soChart.addQuery(tag, dataWithDates);
     });
 }
 

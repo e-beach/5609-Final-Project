@@ -68,6 +68,12 @@
 
             <div class="container">
                 <ul class="list-group" id="vis-tag-list">
+                    <div v-for="query in soChart.queries" v-on:click="soChart.removeQuery(query)">
+                        <li class="list-group-item current-tag" v-bind:style="{borderColor : query.color, borderWidth: '4px'}">
+                            <span class="glyphicon glyphicon-trash" v-bind:style="{color: query.color}"></span>
+                            {{ query.tag }}
+                        </li>
+                    </div>
                     <!--li class="list-group-item list-group-item-success">Tags</li-->
                 </ul>
             </div>
