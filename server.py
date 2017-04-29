@@ -18,6 +18,10 @@ c = conn.cursor()
 def send_js(path):
     return send_from_directory('bower_components', path)
 
+@app.route('/experiment/<path:path>')
+def send_experiment(path):
+    return send_from_directory('experiment', path)
+
 @app.route('/')
 def index():
     return send_file('templates/index.html')
