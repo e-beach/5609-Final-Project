@@ -234,6 +234,22 @@ function pieChart(title, tags){
     });
 }
 
+const MAX_CHILDREN = 5;
+function populateNode(node, done){
+    node.children = node.children || [];
+    fetchRelatedTags(node.name, tags => {
+        node.children = tags.items.slice(1, 1+MAX_CHILDREN).map( (childTag) => {
+            return {
+                name: childTag.name,
+                parent: node.name,
+            }
+        });
+        if (done){
+            done(node);
+        }
+    });
+}
+
 function tagGraph(relatedTags){
     MAX_GRANDCHILDREN = 3;
     const graphJSON = [
@@ -246,23 +262,30 @@ function tagGraph(relatedTags){
     ];
     const root = graphJSON[0];
     let counter = relatedTags.length;
-    relatedTags.forEach(childTag => fetchRelatedTags(childTag, tags => {
-        root.children.push({
-            name: childTag,
-            parent: app.currentTag,
-            children: tags.items.slice(1, 1+MAX_GRANDCHILDREN).map( (grandChildTag) => {
-                return {
-                    name: grandChildTag.name,
-                    parent: childTag,
-                }
-            })
-        });
-        counter--; // UNSAFE RACE CONDITION
-        if (counter == 0){
-            drawSVG(graphJSON);
-        }
-    }
-    ));
+
+
+    root.children = relatedTags.map( t => ({
+        name: t,
+        parent: root.name,
+    }));
+
+    // relatedTags.forEach(childTag => fetchRelatedTags(childTag, tags => {
+    //     root.children.push({
+    //         name: childTag,
+    //         parent: app.currentTag,
+    //         _children: tags.items.slice(1, 1+MAX_GRANDCHILDREN).map( (grandChildTag) => {
+    //             return {
+                    
+    //             }
+    //         })
+    //     });
+    //     counter--; // UNSAFE RACE CONDITION
+    //     if (counter == 0){
+    //         drawSVG(graphJSON);
+    //     }
+    // }
+    // ));
+    drawSVG(graphJSON);
 }
 
 $("#tagForm").submit( (e) => {
@@ -288,34 +311,6 @@ $("#tagForm").submit( (e) => {
     setInterval(fetchNewTags, 60000);
 
 // TreeStuff
-
-
-var treeData = [
-{
-    "name": "Top Level",
-    "parent": "null",
-    "children": [
-    {
-        "name": "Level 2: A",
-        "parent": "Top Level",
-        "children": [
-        {
-            "name": "Son of A",
-            "parent": "Level 2: A"
-        },
-        {
-            "name": "Daughter of A",
-            "parent": "Level 2: A"
-        }
-        ]
-    },
-    {
-        "name": "Level 2: B",
-        "parent": "Top Level"
-    }
-    ]
-}
-];
 
 function drawSVG(data){
 
@@ -438,13 +433,16 @@ function click(d) {
         d._children = d.children;
         d.children = null;
     } else {
-        d.children = d._children;
-        d._children = null;
+        if(d._children){
+           d.children = d._children;
+           d._children = null; 
+        } else {
+            populateNode(d, update);
+            return;
+        }   
     }
     update(d);
 }
 
 }
-
-drawSVG(treeData);
 });
