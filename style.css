@@ -15,3 +15,7 @@ ul.list-group:after {
 #related {
     margin-top: 50px;
 }
+
+.even-more-content {
+    margin-left: 10px;
+}

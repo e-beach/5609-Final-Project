@@ -17,7 +17,7 @@ if (!String.prototype.format) { // First, checks if it isn't implemented yet.
 function Datestring(s){
     return {
         string: s,
-        date: new Date(s),
+        date: moment(s),
         equals: (d) => d.string === s
     }
 }
@@ -25,13 +25,26 @@ function Datestring(s){
 const START_DATE = Datestring('2017-01-01');
 const END_DATE = Datestring('2017-03-13');
 
+ Vue.component('tag-link', {
+     props: ['tag', 'action'],
+     template: `
+     <div v-on:click="action(tag)" class="row">
+         <div class="btn btn-default col-xs-12">
+             {{ tag }}
+         </div>
+     </div>
+    `,
+ });
+
 window.app = new Vue({
     el: '#app',
     data: {
         title : "Stack Overflow Tag Visualization",
         relatedTags: [ ],
         currentTag: "",
-        soChart: {}  // set later
+        // set later
+        soChart: {},
+        newTags: [],
     },
     // expose these to html
     methods: {
@@ -44,10 +57,19 @@ class StackOverflowChart {
     constructor(){
         this.queries = [];
         this.color = -1;
-        this.maxQueriesSingleDay = 0;
-        this.yScale = null;
         this.start = START_DATE;  // positive inifinity
         this.end =  END_DATE;  // negative infinity
+    }
+
+    reset(start, end){
+        this.chart.unload(); // remove all data
+        delete this.chart;
+
+        // reset other stuff
+        this.queries = [];
+        this.color = -1;
+        this.start = start;
+        this.end =  end;
     }
 
     nextColor(){
@@ -69,9 +91,18 @@ class StackOverflowChart {
                 rows: [['date', tag]].concat(query.data),
                 type: 'spline',
                 colors: {
-                    [tag]: query.color
+                    [tag]: query.color,
                 }
-            }
+            },
+            axis: {
+                x: {
+                    type: 'timeseries',
+                    tick: {
+                        // TODO customize based on range.
+                        format: (d) => moment(d).format("MM/DD/YY")
+                    }
+                }
+            },
         };
 
         // add the query to the chart
@@ -85,7 +116,9 @@ class StackOverflowChart {
 
     removeQuery(query){
         this.chart.unload(query.tag);
+        console.log('before', this.queries);
         this.queries = this.queries.filter(q => q !== query);
+        console.log('after', this.queries);
     }
 
     tags(){
@@ -122,15 +155,8 @@ function getData(tag, start, end){
 function setDate(start, end){
     if (! (start.equals(soChart.start) && end.equals(soChart.end)) ){
         const tags = soChart.tags();
-        soChart.queries.forEach(q => soChart.removeQuery(q));
-        soChart = new StackOverflowChart();
-
-        // chart needs values to set align of x-axis
-        soChart.start = start;
-        soChart.end = end;
-
+        soChart.reset(start, end);
         tags.forEach(t => getData(t, start, end));
-
     }
 }
 
@@ -147,16 +173,29 @@ $("#tagForm").submit( (e) => {
     const start = Datestring($('#start-date').val());
     const end = Datestring($('#end-date').val());
 
-    setDate(start, end);
-
     if ( (tag.trim().length !=0) && ! soChart.tags().includes(tag)){
         getNewTag(tag, start, end);
     }
+
+    setDate(start, end); // possible race condition if server query in getNewTag returns before setDate, but this will probably never happen.
 });
 
 // initial querky
 $("#start-date").val(START_DATE.string);
 $("#end-date").val(END_DATE.string);
-getNewTag('javascript', START_DATE, END_DATE);
+getNewTag('JavaScript', START_DATE, END_DATE);
+
+function fetchNewTags(){
+    const newQuestionsURL = 'https://api.stackexchange.com/2.2/questions?pagesize=100&order=desc&sort=activity&site=stackoverflow'
+    const MAX_TAGS = 15;
+    $.getJSON(newQuestionsURL, (data) => {
+        console.log(data);
+        const tags = _.uniq(_.flatten(data.items.map(q => q.tags))).slice(0, MAX_TAGS);
+        app.newTags = tags;
+    });
+}
+
+fetchNewTags();
+setInterval(fetchNewTags, 60000);
 
 });

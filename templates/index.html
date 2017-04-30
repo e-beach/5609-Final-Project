@@ -4,6 +4,7 @@
         <!-- getting stuff done -->
         <script src="https://code.jquery.com/jquery-3.2.1.js"></script>;
         <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
 
         <!-- bootstrap -->
         <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
@@ -55,13 +56,7 @@
                     </div>
                     <div class="col-xs-2 col-xs-offset-2" id='related'>
                         <p class="text-center so-title"> Tags Related To {{ currentTag }} </p>
-                        <ul class="list-group" id="related tags">
-                            <div v-for="tag in relatedTags" v-on:click="getNewTag(tag)" class="row">
-                                <div class="btn btn-default col-xs-12">
-                                    {{ tag }}
-                                </div>
-                            </div>
-                        </ul>
+                            <tag-link v-for="tag in relatedTags" :tag="tag" :action='getNewTag'></tag-link>
                     </div>
                 </div>
             </div>
@@ -76,6 +71,13 @@
                     </div>
                     <!--li class="list-group-item list-group-item-success">Tags</li-->
                 </ul>
+            </div>
+            <div class="even-more-content row">
+                <div class="col-xs-2">
+                    <div class="text-center">Recent Tags:</div>
+                    <tag-link v-for="tag in newTags" :tag="tag" :action='getNewTag'></tag-link>
+                    <!--div v-for="tag in newTags"-->
+                </div>
             </div>
         </div> <!-- end vue app -->
     </body>
