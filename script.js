@@ -1,8 +1,10 @@
+const RELATED_TAGS = 'https://api.stackexchange.com/2.2/tags/{0}/related?site=stackoverflow'
 const CREDENTIALS = {
     key:  'Q5zLQ3dmjTTgLTI4ize63A(('
 };
+
 $(function(){
-    let soChart
+    let soChart;
 
     // source: http://stackoverflow.com/questions/610406/javascript-equivalent-to-printf-string-format
     if (!String.prototype.format) { // First, checks if it isn't implemented yet.
@@ -133,15 +135,18 @@ $(function(){
 
     app.soChart = soChart = new StackOverflowChart();
 
-    function setRelatedTags(tag){
-        const RELATED_TAGS = 'https://api.stackexchange.com/2.2/tags/{0}/related?site=stackoverflow'
-        const MAX_RELATED_TAGS = 10;
+    function fetchRelatedTags(tag, done){
         const url = RELATED_TAGS.format(tag);
-        $.getJSON(url, CREDENTIALS, (data) => {
-            // first item is tag itself, which we don't want.
+        $.getJSON(url, CREDENTIALS, done);
+    }
+
+    function setRelatedTags(tag){
+        const MAX_RELATED_TAGS = 10;
+        fetchRelatedTags(tag, (data) => {
             const related = data.items.map( blob => blob.name ).slice(1, MAX_RELATED_TAGS+1);
             app.relatedTags = related;
             pieChart(app.currentTag, _.clone(related));
+            tagGraph(_.clone(related));
         });
     }
 
@@ -229,6 +234,11 @@ $(function(){
         });
     }
 
+    function tagGraph(relatedTags){
+        relatedTags.forEach(t => fetchRelatedTags(t, tags => {
+        }
+        ));
+    }
 
     $("#tagForm").submit( (e) => {
         e.preventDefault();
@@ -242,7 +252,6 @@ $(function(){
 
         setDate(start, end); // possible race condition if server query in getNewTag returns before setDate, but this will probably never happen.
     });
-
 
 
     // initial querky
