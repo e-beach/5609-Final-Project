@@ -55,14 +55,15 @@
                         <div id="svg-container"></div>
                     </div>
                     <div class="col-xs-2"></div>
-                    <div class="some-tags col-xs-2" id='related'>
-                        <div class="row text-center so-title"> Tags Related To {{ currentTag }}:</div>
-                        <tag-link v-for="tag in relatedTags" :tag="tag" :action='getNewTag'></tag-link>
-                    </div>
                     <div class="some-tags col-xs-2">
                         <div class="row text-center so-title">Recent Tags:</div>
                         <tag-link v-for="tag in newTags" :tag="tag" :action='getNewTag'></tag-link>
                     </div>
+                    <div class="some-tags col-xs-2" id='related'>
+                        <div class="row text-center so-title"> Top Tags Overall:</div>
+                        <tag-link v-for="tag in topTags" :tag="tag" :action='getNewTag'></tag-link>
+                    </div>
+                    
                 </div>
             </div>
 

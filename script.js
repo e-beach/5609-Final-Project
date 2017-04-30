@@ -1,4 +1,6 @@
-const RELATED_TAGS = 'https://api.stackexchange.com/2.2/tags/{0}/related?site=stackoverflow'
+const RELATED_TAGS = 'https://api.stackexchange.com/2.2/tags/{0}/related?site=stackoverflow';
+const TOP_TAGS = 'https://api.stackexchange.com/2.2/tags?order=desc&sort=popular&site=stackoverflow';
+const FETCH_NEW_TAGS_INTERVAL = 8000;
 const CREDENTIALS = {
     key:  'Q5zLQ3dmjTTgLTI4ize63A(('
 };
@@ -50,7 +52,8 @@ $(function(){
             // set later
             soChart: {},
             newTags: [],
-            normalized: false
+            topTags: [],
+            normalized: false,
         },
         // expose these to html
         methods: {
@@ -137,16 +140,18 @@ $(function(){
 
     function fetchRelatedTags(tag, done){
         const url = RELATED_TAGS.format(tag);
-        $.getJSON(url, CREDENTIALS, done);
+        $.getJSON(url, CREDENTIALS, tag => done(tag.items));
     }
 
     function setRelatedTags(tag){
         const MAX_RELATED_TAGS = 10;
         fetchRelatedTags(tag, (data) => {
-            const related = data.items.map( blob => blob.name ).slice(1, MAX_RELATED_TAGS+1);
+            const related = data.map( blob => blob.name ).slice(1, MAX_RELATED_TAGS+1);
             app.relatedTags = related;
             pieChart(app.currentTag, _.clone(related));
-            tagGraph(_.clone(related));
+            if (! app.isTagGraphDrawn ){
+                tagGraph(_.clone(related));
+            };
         });
     }
 
@@ -155,12 +160,12 @@ $(function(){
     }
 
     function filterTime(data, start=soChart.start, end=soChart.end){
-     start = start.string;
-     end = end.string;
-     return data.filter( (d) => start <= d[0] && d[0] <= end);
- }
+       start = start.string;
+       end = end.string;
+       return data.filter( (d) => start <= d[0] && d[0] <= end);
+   }
 
- function addTagToChart(tag, start, end){
+   function addTagToChart(tag, start, end){
     const MAX_POINTS = 25;
     getData(tag, (data) => {
         const dataWithDates = filterTime(data, start, end).map( (d) => [ new Date(d[0]), d[1] ] );
@@ -174,7 +179,7 @@ $(function(){
             }
             avg = avg / j;
             smoothedOut.push([
-                dataWithDates[i][0],
+                dataWithDates[i+Math.round(j/2)][0],
                 avg
                 ]);
         }
@@ -196,16 +201,24 @@ function getNewTag(tag, start=soChart.start, end=soChart.end){
     app.currentTag = tag;
     setRelatedTags(tag);
 }
-
+const MAX_TAGS = 15;
 function fetchNewTags(){
     const newQuestionsURL = 'https://api.stackexchange.com/2.2/questions?pagesize=100&order=desc&sort=activity&site=stackoverflow'
-    const MAX_TAGS = 10;
     $.getJSON(newQuestionsURL, CREDENTIALS, (data) => {
         console.log(data);
         const tags = _.uniq(_.flatten(data.items.map(q => q.tags))).slice(0, MAX_TAGS);
         app.newTags = tags;
     });
 }
+
+function fetchTopTags(){
+    $.getJSON(TOP_TAGS, CREDENTIALS, (data) => {
+        const tags = data.items.map(blob => blob.name).slice(0, MAX_TAGS);
+        app.topTags = tags;
+    })
+}
+
+
 
 function pieChart(title, tags){
     console.log("loading pie chart for tags:", tags);
@@ -233,59 +246,44 @@ function pieChart(title, tags){
         }));
     });
 }
-
+const LOADED_TAGS = new Set();
 const MAX_CHILDREN = 5;
 function populateNode(node, done){
     node.children = node.children || [];
     fetchRelatedTags(node.name, tags => {
-        node.children = tags.items.slice(1, 1+MAX_CHILDREN).map( (childTag) => {
+        tags = tags.map(t=>t.name);
+        const tagsToDisplay = tags.filter( (t) => !LOADED_TAGS.has(t) ).slice(0, MAX_CHILDREN);
+        node.children = tagsToDisplay.map( (childTag) => {
             return {
-                name: childTag.name,
+                name: childTag,
                 parent: node.name,
             }
         });
+
+        tagsToDisplay.forEach( (t) => LOADED_TAGS.add(t) );
+
         if (done){
             done(node);
         }
     });
 }
 
+
 function tagGraph(relatedTags){
+    app.isTagGraphDrawn = true;
     MAX_GRANDCHILDREN = 3;
-    const graphJSON = [
-    {
+    const graphJSON = [{
         name: app.currentTag,
         parent: null,
-        children: [
-        ]
-    }
-    ];
+    }];
     const root = graphJSON[0];
-    let counter = relatedTags.length;
+
+    populateNode(root, () => {
+      $("#simple").empty();
+      drawSVG(graphJSON);
+  });
 
 
-    root.children = relatedTags.map( t => ({
-        name: t,
-        parent: root.name,
-    }));
-
-    // relatedTags.forEach(childTag => fetchRelatedTags(childTag, tags => {
-    //     root.children.push({
-    //         name: childTag,
-    //         parent: app.currentTag,
-    //         _children: tags.items.slice(1, 1+MAX_GRANDCHILDREN).map( (grandChildTag) => {
-    //             return {
-                    
-    //             }
-    //         })
-    //     });
-    //     counter--; // UNSAFE RACE CONDITION
-    //     if (counter == 0){
-    //         drawSVG(graphJSON);
-    //     }
-    // }
-    // ));
-    drawSVG(graphJSON);
 }
 
 $("#tagForm").submit( (e) => {
@@ -297,18 +295,18 @@ $("#tagForm").submit( (e) => {
     if ( (tag.trim().length !=0) && ! soChart.tags().includes(tag)){
         getNewTag(tag, start, end);
     }
+    setDate(start, end); // possible race condition if server query in getNewTag returns before setDate, but this will probably never happen.
+ });
 
-        setDate(start, end); // possible race condition if server query in getNewTag returns before setDate, but this will probably never happen.
-    });
 
+// initial querky
+$("#start-date").val(START_DATE.string);
+$("#end-date").val(END_DATE.string);
+getNewTag('JavaScript', START_DATE, END_DATE);
 
-    // initial querky
-    $("#start-date").val(START_DATE.string);
-    $("#end-date").val(END_DATE.string);
-    getNewTag('JavaScript', START_DATE, END_DATE);
-
-    fetchNewTags();
-    setInterval(fetchNewTags, 60000);
+fetchNewTags();
+fetchTopTags();
+setInterval(fetchNewTags, FETCH_NEW_TAGS_INTERVAL);
 
 // TreeStuff
 
@@ -328,7 +326,7 @@ function drawSVG(data){
     var diagonal = d3.svg.diagonal()
     .projection(function(d) { return [d.y, d.x]; });
 
-    var svg = d3.select("body").append("svg")
+    var svg = d3.select("#simple").append("svg")
     .attr("width", width + margin.right + margin.left)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -434,14 +432,17 @@ function click(d) {
         d.children = null;
     } else {
         if(d._children){
-           d.children = d._children;
-           d._children = null; 
-        } else {
-            populateNode(d, update);
-            return;
-        }   
-    }
-    update(d);
+         d.children = d._children;
+         d._children = null; 
+     } else {
+        populateNode(d, () => {
+            update(d);
+            getNewTag(d.name);
+        });
+        return;
+    }   
+}
+update(d);
 }
 
 }
