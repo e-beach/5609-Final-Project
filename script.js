@@ -153,28 +153,24 @@ $(function(){
     }
 
     function addTagToChart(tag, start, end){
+        const MAX_POINTS = 25;
         getData(tag, (data) => {
-            console.log("addTagToChart: got data");
             const dataWithDates = filterTime(data, start, end).map( (d) => [ new Date(d[0]), d[1] ] );
-            let toPlot = dataWithDates;
-            const MAX_POINTS = 1000;
-            // we want to plot at most 1000 datapoints
-            // if there are more than 1000,
-            const ratio = Math.ceil(dataWithDates.length / MAX_POINTS);
-            const culled = [];
-            for(let i = 0; i < dataWithDates.length; i += ratio){
+            const stride = Math.ceil(dataWithDates.length / MAX_POINTS);
+            const smoothedOut = [];
+            for(let i = 0; i < dataWithDates.length; i += stride){
                 let avg = 0;
-                for(let j = 0; j < ratio && i +j < dataWithDates.length; j++){
+                let j;
+                for(j = 0; j < stride && i +j < dataWithDates.length; j++){
                     avg += dataWithDates[i+j][1];
                 }
-                avg = avg / ratio;
-                culled.push([
+                avg = avg / j;
+                smoothedOut.push([
                     dataWithDates[i][0],
                     avg
                 ]);
             }
-            console.log("culled", culled);
-            soChart.addQuery(tag, culled);
+            soChart.addQuery(tag, smoothedOut);
         });
     }
 
