@@ -2,7 +2,7 @@
     <head> <title>CSCI 5609 Final Project</title>
 
         <!-- getting stuff done -->
-        <script src="https://code.jquery.com/jquery-3.2.1.js"></script>;
+        <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
 
@@ -57,7 +57,7 @@
                     <div class="col-xs-2"></div>
                     <div class="some-tags col-xs-2" id='related'>
                         <div class="row text-center so-title"> Tags Related To {{ currentTag }}:</div>
-                            <tag-link v-for="tag in relatedTags" :tag="tag" :action='getNewTag'></tag-link>
+                        <tag-link v-for="tag in relatedTags" :tag="tag" :action='getNewTag'></tag-link>
                     </div>
                     <div class="some-tags col-xs-2">
                         <div class="row text-center so-title">Recent Tags:</div>
@@ -81,10 +81,12 @@
                         Tags related to <b>{{ currentTag }} </b>
                         <div id='pie'></div>
                     </div>
+                    <div class="col-xs-3">
+                        <div id="simple"></div>
+                    </div>
                 </div>
             </div>
-            <div class="even-more-content row">
-            </div>
+            <div class="even-more-content row"> </div>
         </div> <!-- end vue app -->
     </body>
 </html>
