@@ -187,7 +187,7 @@ getNewTag('JavaScript', START_DATE, END_DATE);
 
 function fetchNewTags(){
     const newQuestionsURL = 'https://api.stackexchange.com/2.2/questions?pagesize=100&order=desc&sort=activity&site=stackoverflow'
-    const MAX_TAGS = 15;
+    const MAX_TAGS = 10;
     $.getJSON(newQuestionsURL, (data) => {
         console.log(data);
         const tags = _.uniq(_.flatten(data.items.map(q => q.tags))).slice(0, MAX_TAGS);

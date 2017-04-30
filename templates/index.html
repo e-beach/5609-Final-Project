@@ -54,9 +54,14 @@
                     <div class="col-xs-6">
                         <div id="svg-container"></div>
                     </div>
-                    <div class="col-xs-2 col-xs-offset-2" id='related'>
-                        <p class="text-center so-title"> Tags Related To {{ currentTag }} </p>
+                    <div class="col-xs-2"></div>
+                    <div class="some-tags col-xs-2" id='related'>
+                        <div class="row text-center so-title"> Tags Related To {{ currentTag }}:</div>
                             <tag-link v-for="tag in relatedTags" :tag="tag" :action='getNewTag'></tag-link>
+                    </div>
+                    <div class="some-tags col-xs-2">
+                        <div class="row text-center so-title">Recent Tags:</div>
+                        <tag-link v-for="tag in newTags" :tag="tag" :action='getNewTag'></tag-link>
                     </div>
                 </div>
             </div>
@@ -69,15 +74,9 @@
                             {{ query.tag }}
                         </li>
                     </div>
-                    <!--li class="list-group-item list-group-item-success">Tags</li-->
                 </ul>
             </div>
             <div class="even-more-content row">
-                <div class="col-xs-2">
-                    <div class="text-center">Recent Tags:</div>
-                    <tag-link v-for="tag in newTags" :tag="tag" :action='getNewTag'></tag-link>
-                    <!--div v-for="tag in newTags"-->
-                </div>
             </div>
         </div> <!-- end vue app -->
     </body>
