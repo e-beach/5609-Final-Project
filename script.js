@@ -1,3 +1,6 @@
+const CREDENTIALS = {
+    key:  'Q5zLQ3dmjTTgLTI4ize63A(('
+};
 $(function(){
     let soChart
 
@@ -134,7 +137,7 @@ $(function(){
         const RELATED_TAGS = 'https://api.stackexchange.com/2.2/tags/{0}/related?site=stackoverflow'
         const MAX_RELATED_TAGS = 10;
         const url = RELATED_TAGS.format(tag);
-        $.getJSON(url, (data) => {
+        $.getJSON(url, CREDENTIALS, (data) => {
             // first item is tag itself, which we don't want.
             const related = data.items.map( blob => blob.name ).slice(1, MAX_RELATED_TAGS+1);
             app.relatedTags = related;
@@ -192,7 +195,7 @@ $(function(){
     function fetchNewTags(){
         const newQuestionsURL = 'https://api.stackexchange.com/2.2/questions?pagesize=100&order=desc&sort=activity&site=stackoverflow'
         const MAX_TAGS = 10;
-        $.getJSON(newQuestionsURL, (data) => {
+        $.getJSON(newQuestionsURL, CREDENTIALS, (data) => {
             console.log(data);
             const tags = _.uniq(_.flatten(data.items.map(q => q.tags))).slice(0, MAX_TAGS);
             app.newTags = tags;
