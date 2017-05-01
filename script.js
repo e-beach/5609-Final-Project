@@ -148,7 +148,7 @@ $(function(){
         fetchRelatedTags(tag, (data) => {
             const related = data.map( blob => blob.name ).slice(1, MAX_RELATED_TAGS+1);
             app.relatedTags = related;
-            pieChart(app.currentTag, _.clone(related));
+            pieChart(app.currentTag, data);
             if (! app.isTagGraphDrawn ){
                 tagGraph(_.clone(related));
             };
@@ -201,7 +201,8 @@ function getNewTag(tag, start=soChart.start, end=soChart.end){
     app.currentTag = tag;
     setRelatedTags(tag);
 }
-const MAX_TAGS = 15;
+
+const MAX_TAGS = 10;
 function fetchNewTags(){
     const newQuestionsURL = 'https://api.stackexchange.com/2.2/questions?pagesize=100&order=desc&sort=activity&site=stackoverflow'
     $.getJSON(newQuestionsURL, CREDENTIALS, (data) => {
@@ -218,34 +219,22 @@ function fetchTopTags(){
     })
 }
 
-
-
-function pieChart(title, tags){
-    console.log("loading pie chart for tags:", tags);
-    let chart;
-    const firsttag = tags.shift();
-    const freqcount = (data) => filterTime(data).map(d => d[1]).reduce((a,b) => a + b);
-    getData(firsttag, (data) => {
-        console.log("pie data", data, filterTime(data));
-        chart = c3.generate({
-            bindto: '#pie',
-            data: {
-                columns: [
-                [firsttag, freqcount(data)]
-                ],
-                type: 'pie',
-                onclick: (d) => getNewTag(d.name),
-            },
-        });
-        tags.forEach( (t) => getData(t, (data) => {
-            console.log("pie: loading ", t, freqcount(data));
-            chart.load({
-                columns: [ [t, freqcount(data)] ]
-                , onclick: (d, i) => { console.log(tag); }
-            });
-        }));
+function pieChart(title, tagdata){
+    const MAX_PIE_TAGS = 10;
+    const columns = tagdata.splice(1,MAX_PIE_TAGS+1).map( t => [
+            t.name,
+            t.count,
+        ]);
+    c3.generate({
+        bindto: '#pie',
+        data: {
+            columns,
+            type: 'pie',
+            onclick: (d) => getNewTag(d.name),
+        }
     });
 }
+
 const LOADED_TAGS = new Set();
 const MAX_CHILDREN = 5;
 function populateNode(node, done){
@@ -253,15 +242,11 @@ function populateNode(node, done){
     fetchRelatedTags(node.name, tags => {
         tags = tags.map(t=>t.name);
         const tagsToDisplay = tags.filter( (t) => !LOADED_TAGS.has(t) ).slice(0, MAX_CHILDREN);
-        node.children = tagsToDisplay.map( (childTag) => {
-            return {
+        node.children = tagsToDisplay.map( (childTag) => ({
                 name: childTag,
                 parent: node.name,
-            }
-        });
-
+        }));
         tagsToDisplay.forEach( (t) => LOADED_TAGS.add(t) );
-
         if (done){
             done(node);
         }
@@ -271,7 +256,6 @@ function populateNode(node, done){
 
 function tagGraph(relatedTags){
     app.isTagGraphDrawn = true;
-    MAX_GRANDCHILDREN = 3;
     const graphJSON = [{
         name: app.currentTag,
         parent: null,
@@ -279,11 +263,8 @@ function tagGraph(relatedTags){
     const root = graphJSON[0];
 
     populateNode(root, () => {
-      $("#simple").empty();
       drawSVG(graphJSON);
   });
-
-
 }
 
 $("#tagForm").submit( (e) => {
@@ -299,7 +280,7 @@ $("#tagForm").submit( (e) => {
  });
 
 
-// initial querky
+// initial query
 $("#start-date").val(START_DATE.string);
 $("#end-date").val(END_DATE.string);
 getNewTag('JavaScript', START_DATE, END_DATE);
