@@ -414,14 +414,14 @@ function click(d) {
     } else {
         if(d._children){
          d.children = d._children;
-         d._children = null; 
+         d._children = null;
      } else {
         populateNode(d, () => {
             update(d);
             getNewTag(d.name);
         });
         return;
-    }   
+    }
 }
 update(d);
 }
